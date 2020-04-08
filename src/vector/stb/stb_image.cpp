@@ -12,20 +12,7 @@
 #define STBI_NO_PIC
 
 #include "stb_image.h"
-
-#if defined _WIN32 || defined __CYGWIN__
-  #ifdef LOT_BUILD
-    #define LOT_EXPORT __declspec(dllexport)
-  #else
-    #define LOT_EXPORT __declspec(dllimport)
-  #endif
-#else
-  #ifdef LOT_BUILD
-      #define LOT_EXPORT __attribute__ ((visibility ("default")))
-  #else
-      #define LOT_EXPORT
-  #endif
-#endif
+#include "lottie_export.h"
 
 #ifdef __cplusplus
 extern "C" {

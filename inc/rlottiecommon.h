@@ -19,20 +19,7 @@
 #ifndef _RLOTTIE_COMMON_H_
 #define _RLOTTIE_COMMON_H_
 
-#if defined _WIN32 || defined __CYGWIN__
-  #ifdef LOT_BUILD
-    #define LOT_EXPORT __declspec(dllexport)
-  #else
-    #define LOT_EXPORT __declspec(dllimport)
-  #endif
-#else
-  #ifdef LOT_BUILD
-      #define LOT_EXPORT __attribute__ ((visibility ("default")))
-  #else
-      #define LOT_EXPORT
-  #endif
-#endif
-
+#include "lottie_expport.h"
 
 /**
  * @defgroup Lottie_Animation Lottie_Animation
