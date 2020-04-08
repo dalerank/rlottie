@@ -47,6 +47,18 @@ target_include_directories(rlottie
     )
 
 #declare target compilation options
+if (MSVC)
+target_compile_options(rlottie
+                    PUBLIC
+                    PRIVATE
+                        -std=c++14
+                        -fno-exceptions
+                        -fno-unwind-tables
+                        -fno-asynchronous-unwind-tables
+                        -fno-rtti
+                        -Wall
+                    )
+else()
 target_compile_options(rlottie
                     PUBLIC
                     PRIVATE
@@ -63,6 +75,7 @@ target_compile_options(rlottie
                         -Wno-unused-parameter
                         -fvisibility=hidden
                     )
+endif(MSVC)
 
 #declare dependancy
 set( CMAKE_THREAD_PREFER_PTHREAD TRUE )
