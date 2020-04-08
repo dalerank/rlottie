@@ -17,8 +17,6 @@
  */
 
 #include "vpainter.h"
-#include <algorithm>
-
 
 V_BEGIN_NAMESPACE
 
@@ -46,10 +44,10 @@ void VPainter::drawRle(const VRle &rle, const VRle &clip)
 
 static void fillRect(const VRect &r, VSpanData *data)
 {
-    auto x1 = std::max(r.x(), 0);
-    auto x2 = std::min(r.x() + r.width(), data->mDrawableSize.width());
-    auto y1 = std::max(r.y(), 0);
-    auto y2 = std::min(r.y() + r.height(), data->mDrawableSize.height());
+    auto x1 = rlottie_std::max(r.x(), 0);
+    auto x2 = rlottie_std::min(r.x() + r.width(), data->mDrawableSize.width());
+    auto y1 = rlottie_std::max(r.y(), 0);
+    auto y2 = rlottie_std::min(r.y() + r.height(), data->mDrawableSize.height());
 
     if (x2 <= x1 || y2 <= y1) return;
 
@@ -58,7 +56,7 @@ static void fillRect(const VRect &r, VSpanData *data)
 
     int y = y1;
     while (y < y2) {
-        int n = std::min(nspans, y2 - y);
+        int n = rlottie_std::min(nspans, y2 - y);
         int i = 0;
         while (i < n) {
             spans[i].x = short(x1);

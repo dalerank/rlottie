@@ -57,7 +57,7 @@ void VDasher::moveTo(const VPointF &p)
         for (size_t i = 0; i < mArraySize; i++) {
             totalLength = mDashArray[i].length + mDashArray[i].gap;
         }
-        float normalizeLen = std::fmod(mDashOffset, totalLength);
+        float normalizeLen = rlottie_std::fmod(mDashOffset, totalLength);
         if (normalizeLen < 0.0f) {
             normalizeLen = totalLength + normalizeLen;
         }
@@ -191,8 +191,8 @@ void VDasher::dashHelper(const VPath &path, VPath &result)
     mResult = &result;
     mResult->reserve(path.points().size(), path.elements().size());
     mIndex = 0;
-    const std::vector<VPath::Element> &elms = path.elements();
-    const std::vector<VPointF> &       pts = path.points();
+    const rlottie_std::vector<VPath::Element> &elms = path.elements();
+    const rlottie_std::vector<VPointF> &       pts = path.points();
     const VPointF *                    ptPtr = pts.data();
 
     for (auto &i : elms) {

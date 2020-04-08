@@ -20,7 +20,6 @@
 #define VDRAWHELPER_H
 
 #include <cstring>
-#include <memory>
 #include "assert.h"
 #include "vbitmap.h"
 #include "vbrush.h"
@@ -98,6 +97,7 @@ private:
     size_t    mBytesPerLine{0};
     size_t    mBytesPerPixel{0};
     uchar    *mBuffer{nullptr};
+    bool      mNeedClear{true};
 };
 
 struct VGradientData {
@@ -177,7 +177,7 @@ struct VSpanData {
     ProcessRleSpan                       mBlendFunc;
     ProcessRleSpan                       mUnclippedBlendFunc;
     VSpanData::Type                      mType;
-    std::shared_ptr<const VColorTable>   mColorTable{nullptr};
+    rlottie_std::shared_ptr<const VColorTable>   mColorTable{nullptr};
     VPoint                               mOffset; // offset to the subsurface
     VSize                                mDrawableSize;// suburface size
     union {

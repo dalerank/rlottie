@@ -19,20 +19,19 @@
 #ifndef LOTTIELOADER_H
 #define LOTTIELOADER_H
 
-#include<sstream>
-#include<memory>
+#include "rlottie.h"
 
 class LOTModel;
 class LottieLoader
 {
 public:
    static void configureModelCacheSize(size_t cacheSize);
-   bool load(const std::string &filePath, bool cachePolicy);
-   bool loadFromData(std::string &&jsonData, const std::string &key,
-                     const std::string &resourcePath, bool cachePolicy);
-   std::shared_ptr<LOTModel> model();
+   bool load(const rlottie_std::string &filePath, bool cachePolicy);
+   bool loadFromData(rlottie_std::string &&jsonData, const rlottie_std::string &key,
+                     const rlottie_std::string &resourcePath, bool cachePolicy);
+   rlottie_std::shared_ptr<LOTModel> model();
 private:  
-   std::shared_ptr<LOTModel>    mModel;
+   rlottie_std::shared_ptr<LOTModel>    mModel;
 };
 
 #endif // LOTTIELOADER_H

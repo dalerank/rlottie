@@ -12,11 +12,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <limits>
-#include <new>
-#include <type_traits>
-#include <utility>
-#include <vector>
+#include "vglobal.h"
 
 // SkArenaAlloc allocates object and destroys the allocated objects when destroyed. It's designed
 // to minimize the number of underlying block allocations. SkArenaAlloc allocates first out of an
@@ -33,7 +29,7 @@
 //
 // If mostCasesSize is too large for the stack, you can use the following pattern.
 //
-//   std::unique_ptr<char[]> block{new char[mostCasesSize]};
+//   rlottie_std::unique_ptr<char[]> block{new char[mostCasesSize]};
 //   SkArenaAlloc arena(block.get(), mostCasesSize, almostAllCasesSize);
 //
 // If the program only sometimes allocates memory, use the following pattern.
@@ -58,6 +54,33 @@
 // recursion of the RunDtorsOnBlock to be limited to O(log size-of-memory). Block size grow using
 // the Fibonacci sequence which means that for 2^32 memory there are 48 allocations, and for 2^48
 // there are 71 allocations.
+#ifdef LOTTIE_DEFAULT_ALLOCATOR
+class VArenaAlloc {
+public:
+    VArenaAlloc(char* block, size_t blockSize, size_t firstHeapAllocation) {}
+
+    explicit VArenaAlloc(size_t firstHeapAllocation)
+        : VArenaAlloc(nullptr, 0, firstHeapAllocation)
+    {}
+
+    ~VArenaAlloc() {}
+
+    template <typename T, typename... Args>
+    T* make(Args&&... args) {
+        return new T(rlottie_std::forward<Args>(args)...);
+    }
+
+    template <typename T>
+    T* makeArrayDefault(size_t count) {
+        return new T[count];
+    }
+
+    template <typename T>
+    T* makeArray(size_t count) {
+        return new T[count];
+    }
+};
+#else //USE_DEFAULT_ALLOCATOR
 class VArenaAlloc {
 public:
     VArenaAlloc(char* block, size_t blockSize, size_t firstHeapAllocation);
@@ -73,7 +96,7 @@ public:
         uint32_t size      = ToU32(sizeof(T));
         uint32_t alignment = ToU32(alignof(T));
         char* objStart;
-        if (std::is_trivially_destructible<T>::value) {
+        if (rlottie_std::is_trivially_destructible<T>::value) {
             objStart = this->allocObject(size, alignment);
             fCursor = objStart + size;
         } else {
@@ -92,7 +115,7 @@ public:
         }
 
         // This must be last to make objects with nested use of this allocator work.
-        return new(objStart) T(std::forward<Args>(args)...);
+        return new(objStart) T(rlottie_std::forward<Args>(args)...);      
     }
 
     template <typename T>
@@ -167,16 +190,16 @@ private:
     template <typename T>
     char* commonArrayAlloc(uint32_t count) {
         char* objStart;
-        AssertRelease(count <= std::numeric_limits<uint32_t>::max() / sizeof(T));
+        AssertRelease(count <= rlottie_std::numeric_limits<uint32_t>::max() / sizeof(T));
         uint32_t arraySize = ToU32(count * sizeof(T));
         uint32_t alignment = ToU32(alignof(T));
 
-        if (std::is_trivially_destructible<T>::value) {
+        if (rlottie_std::is_trivially_destructible<T>::value) {
             objStart = this->allocObject(arraySize, alignment);
             fCursor = objStart + arraySize;
         } else {
             constexpr uint32_t overhead = sizeof(Footer) + sizeof(uint32_t);
-            AssertRelease(arraySize <= std::numeric_limits<uint32_t>::max() - overhead);
+            AssertRelease(arraySize <= rlottie_std::numeric_limits<uint32_t>::max() - overhead);
             uint32_t totalSize = arraySize + overhead;
             objStart = this->allocObjectWithFooter(totalSize, alignment);
 
@@ -228,5 +251,7 @@ public:
 private:
     char fInlineStorage[InlineStorageSize];
 };
+
+#endif //USE_DEFAULT_ALLOCATOR
 
 #endif  // VARENAALLOC_H

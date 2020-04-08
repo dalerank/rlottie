@@ -20,17 +20,68 @@
 #define VCOWPTR_H
 
 #include <cassert>
+#include "vglobal.h"
+
+#ifdef LOTTIE_DEFAULT_ALLOCATOR
+#include <memory>
+
+template <typename T>
+class vcow_ptr {
+  rlottie_std::shared_ptr<T> mModel;
+
+public:
+  vcow_ptr() { mModel = rlottie_std::make_shared<T>(); }
+  ~vcow_ptr() {}
+
+  template <class... Args>
+  explicit vcow_ptr(Args&&... args) : mModel(rlottie_std::make_shared<T>(rlottie_std::forward<Args>(args)...)) {}
+
+  vcow_ptr(const vcow_ptr& x) noexcept : mModel(x.mModel) {}
+  vcow_ptr(vcow_ptr&& x) noexcept : mModel(x.mModel) {}
+
+  vcow_ptr& operator=(const vcow_ptr& x) noexcept
+  {
+    *this = vcow_ptr(x);
+    return *this;
+  }
+
+  vcow_ptr& operator=(vcow_ptr&& x) noexcept
+  {
+    auto tmp = rlottie_std::move(x);
+    swap(*this, tmp);
+    return *this;
+  }
+
+  const T& operator*() const noexcept { return read(); }
+  const T* operator-> () const noexcept { return &read(); }
+
+  size_t refCount() const noexcept { return mModel.use_count(); }
+  bool unique() const noexcept { return mModel.unique(); }
+
+  T& write()
+  {
+    if (!unique()) 
+      *this = vcow_ptr(read());
+    return *mModel.get();
+  }
+
+  const T& read() const noexcept { return *mModel.get(); }
+  friend inline void swap(vcow_ptr& x, vcow_ptr& y) noexcept { rlottie_std::swap(x.mModel, y.mModel); }
+};
+
+#else
+
 #include <atomic>
 
 template <typename T>
 class vcow_ptr {
     struct model {
-        std::atomic<std::size_t> mRef{1};
+        rlottie_std::atomic<rlottie_std::size_t> mRef{1};
 
         model() = default;
 
         template <class... Args>
-        explicit model(Args&&... args) : mValue(std::forward<Args>(args)...){}
+        explicit model(Args&&... args) : mValue(rlottie_std::forward<Args>(args)...){}
         explicit model(const T& other) : mValue(other){}
 
         T mValue;
@@ -53,7 +104,7 @@ public:
     }
 
     template <class... Args>
-    explicit vcow_ptr(Args&&... args) : mModel(new model(std::forward<Args>(args)...))
+    explicit vcow_ptr(Args&&... args) : mModel(new model(rlottie_std::forward<Args>(args)...))
     {
     }
 
@@ -76,7 +127,7 @@ public:
 
     auto operator=(vcow_ptr&& x) noexcept -> vcow_ptr&
     {
-        auto tmp = std::move(x);
+        auto tmp = rlottie_std::move(x);
         swap(*this, tmp);
         return *this;
     }
@@ -85,7 +136,7 @@ public:
 
     auto operator-> () const noexcept -> const element_type* { return &read(); }
 
-    std::size_t refCount() const noexcept
+    rlottie_std::size_t refCount() const noexcept
     {
         assert(mModel);
 
@@ -115,8 +166,9 @@ public:
 
     friend inline void swap(vcow_ptr& x, vcow_ptr& y) noexcept
     {
-        std::swap(x.mModel, y.mModel);
+        rlottie_std::swap(x.mModel, y.mModel);
     }
 };
+#endif
 
 #endif  // VCOWPTR_H

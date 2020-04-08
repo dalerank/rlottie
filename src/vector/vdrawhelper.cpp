@@ -51,22 +51,19 @@
 ****************************************************************************/
 
 #include "vdrawhelper.h"
-#include <algorithm>
 #include <climits>
 #include <cstring>
-#include <mutex>
-#include <unordered_map>
 
 class VGradientCache {
 public:
     struct CacheInfo : public VColorTable {
-        inline CacheInfo(VGradientStops s) : stops(std::move(s)) {}
+        inline CacheInfo(VGradientStops s) : stops(rlottie_std::move(s)) {}
         VGradientStops stops;
     };
-    using VCacheData = std::shared_ptr<const CacheInfo>;
+    using VCacheData = rlottie_std::shared_ptr<const CacheInfo>;
     using VCacheKey = int64_t;
     using VGradientColorTableHash =
-        std::unordered_multimap<VCacheKey, VCacheData>;
+        rlottie_std::unordered_multimap<VCacheKey, VCacheData>;
 
     bool generateGradientColorTable(const VGradientStops &stops, float alpha,
                                     uint32_t *colorTable, int size);
@@ -79,7 +76,7 @@ public:
             hash_val += VCacheKey(stops[i].second.premulARGB() * gradient.alpha());
 
         {
-            std::lock_guard<std::mutex> guard(mMutex);
+            rlottie_std::lock_guard<rlottie_std::mutex> guard(mMutex);
 
             size_t count = mCache.count(hash_val);
             if (!count) {
@@ -127,11 +124,11 @@ protected:
                 mCache.erase(mCache.begin());
             }
         }
-        auto cache_entry = std::make_shared<CacheInfo>(gradient.mStops);
+        auto cache_entry = rlottie_std::make_shared<CacheInfo>(gradient.mStops);
         cache_entry->alpha = generateGradientColorTable(
             gradient.mStops, gradient.alpha(), cache_entry->buffer32,
             VGradient::colorTableSize);
-        mCache.insert(std::make_pair(hash_val, cache_entry));
+        mCache.insert(rlottie_std::make_pair(hash_val, cache_entry));
         return cache_entry;
     }
 
@@ -139,7 +136,7 @@ private:
     VGradientCache() = default;
 
     VGradientColorTableHash mCache;
-    std::mutex              mMutex;
+    rlottie_std::mutex              mMutex;
 };
 
 bool VGradientCache::generateGradientColorTable(const VGradientStops &stops,
@@ -198,7 +195,8 @@ bool VGradientCache::generateGradientColorTable(const VGradientStops &stops,
 
 void VRasterBuffer::clear()
 {
-    memset(mBuffer, 0, mHeight * mBytesPerLine);
+    if (mNeedClear)
+        memset(mBuffer, 0, mHeight * mBytesPerLine);
 }
 
 VBitmap::Format VRasterBuffer::prepare(VBitmap *image)
@@ -208,6 +206,7 @@ VBitmap::Format VRasterBuffer::prepare(VBitmap *image)
     mHeight = image->height();
     mBytesPerPixel = 4;
     mBytesPerLine = image->stride();
+    mNeedClear = image->isNeedClear();
 
     mFormat = image->format();
     return mFormat;
@@ -385,7 +384,7 @@ static void fetch(uint32_t *buffer, uint32_t *end, const Operator *op,
         while (buffer < end) {
             uint32_t result = 0;
             if (det >= 0) {
-                float w = std::sqrt(det) - b;
+                float w = rlottie_std::sqrt(det) - b;
                 if (data->mGradient.radial.fradius + op->radial.dr * w >= 0)
                     result = gradientPixel(&data->mGradient, w);
             }
@@ -400,7 +399,7 @@ static void fetch(uint32_t *buffer, uint32_t *end, const Operator *op,
         }
     } else {
         while (buffer < end) {
-            *buffer++ = gradientPixel(&data->mGradient, std::sqrt(det) - b);
+            *buffer++ = gradientPixel(&data->mGradient, rlottie_std::sqrt(det) - b);
 
             det += delta_det;
             delta_det += delta_delta_det;
@@ -482,7 +481,7 @@ void fetch_radial_gradient(uint32_t *buffer, const Operator *op,
 
                 uint32_t result = 0;
                 if (det >= 0) {
-                    float detSqrt = std::sqrt(det);
+                    float detSqrt = rlottie_std::sqrt(det);
 
                     float s0 = (-b - detSqrt) * op->radial.inv2a;
                     float s1 = (-b + detSqrt) * op->radial.inv2a;
@@ -587,7 +586,7 @@ static void blendGradientARGB(size_t count, const VRle::Span *spans,
         uint *target = data->buffer(spans->x, spans->y);
         int   length = spans->len;
         while (length) {
-            int l = std::min(length, BLEND_GRADIENT_BUFFER_SIZE);
+            int l = rlottie_std::min(length, BLEND_GRADIENT_BUFFER_SIZE);
             op.srcFetch(buffer, &op, data, spans->y, spans->x, l);
             op.func(target, buffer, l, spans->coverage);
             target += l;
@@ -643,7 +642,7 @@ static void      blend_transformed_argb(size_t count, const VRle::Span *spans,
             const int coverage =
                 (spans->coverage * data->mBitmap.const_alpha) >> 8;
             while (length) {
-                int         l = std::min(length, buffer_size);
+                int         l = rlottie_std::min(length, buffer_size);
                 const uint *end = buffer + l;
                 uint *      b = buffer;
                 while (b < end) {
@@ -680,7 +679,7 @@ static void      blend_transformed_argb(size_t count, const VRle::Span *spans,
             const int coverage =
                 (spans->coverage * data->mBitmap.const_alpha) >> 8;
             while (length) {
-                int         l = std::min(length, buffer_size);
+                int         l = rlottie_std::min(length, buffer_size);
                 const uint *end = buffer + l;
                 uint *      b = buffer;
                 while (b < end) {
@@ -839,8 +838,8 @@ void VSpanData::initTexture(const VBitmap *bitmap, int alpha,
     mBitmap.format = bitmap->format();
     mBitmap.x1 = sourceRect.x();
     mBitmap.y1 = sourceRect.y();
-    mBitmap.x2 = std::min(mBitmap.x1 + sourceRect.width(), mBitmap.width);
-    mBitmap.y2 = std::min(mBitmap.y1 + sourceRect.height(), mBitmap.height);
+    mBitmap.x2 = rlottie_std::min(mBitmap.x1 + sourceRect.width(), mBitmap.width);
+    mBitmap.y2 = rlottie_std::min(mBitmap.y1 + sourceRect.height(), mBitmap.height);
 
     mBitmap.const_alpha = alpha;
     mBitmap.type = type;

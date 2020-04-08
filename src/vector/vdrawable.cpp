@@ -61,10 +61,10 @@ void VDrawable::preprocess(const VRect &clip)
 {
     if (mFlag & (DirtyState::Path)) {
         if (mType == Type::Fill) {
-            mRasterizer.rasterize(std::move(mPath), mFillRule, clip);
+            mRasterizer.rasterize(rlottie_std::move(mPath), mFillRule, clip);
         } else {
             applyDashOp();
-            mRasterizer.rasterize(std::move(mPath), mStrokeInfo->cap, mStrokeInfo->join,
+            mRasterizer.rasterize(rlottie_std::move(mPath), mStrokeInfo->cap, mStrokeInfo->join,
                                   mStrokeInfo->width, mStrokeInfo->miterLimit, clip);
         }
         mPath = {};
@@ -93,7 +93,7 @@ void VDrawable::setStrokeInfo(CapStyle cap, JoinStyle join, float miterLimit,
     mFlag |= DirtyState::Path;
 }
 
-void VDrawable::setDashInfo(std::vector<float> &dashInfo)
+void VDrawable::setDashInfo(rlottie_std::vector<float> &dashInfo)
 {
     assert(mStrokeInfo);
     assert(mType == VDrawable::Type::StrokeWithDash);

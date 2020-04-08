@@ -25,9 +25,6 @@
 
 #include <cstdint>
 #include <iosfwd>
-#include <memory>
-#include <string>
-#include <type_traits>
 
 enum class LogLevel : uint8_t { INFO, WARN, CRIT, OFF };
 
@@ -42,7 +39,7 @@ public:
     VDebug(VDebug&&) = default;
     VDebug& operator=(VDebug&&) = default;
 
-    void stringify(std::ostream& os);
+    void stringify(rlottie_std::ostream& os);
 
     VDebug& operator<<(char arg);
     VDebug& operator<<(int32_t arg);
@@ -53,7 +50,7 @@ public:
     VDebug& operator<<(long arg);
     VDebug& operator<<(unsigned long arg);
     VDebug& operator<<(double arg);
-    VDebug& operator<<(std::string const& arg);
+    VDebug& operator<<(rlottie_std::string const& arg);
 
     template <size_t N>
     VDebug& operator<<(const char (&arg)[N])
@@ -63,7 +60,7 @@ public:
     }
 
     template <typename Arg>
-    typename std::enable_if<std::is_same<Arg, char const*>::value,
+    typename rlottie_std::enable_if<rlottie_std::is_same<Arg, char const*>::value,
                             VDebug&>::type
     operator<<(Arg const& arg)
     {
@@ -72,7 +69,7 @@ public:
     }
 
     template <typename Arg>
-    typename std::enable_if<std::is_same<Arg, char*>::value, VDebug&>::type
+    typename rlottie_std::enable_if<rlottie_std::is_same<Arg, char*>::value, VDebug&>::type
     operator<<(Arg const& arg)
     {
         encode(arg);
@@ -98,12 +95,12 @@ private:
     void encode(string_literal_t arg);
     void encode_c_string(char const* arg, size_t length);
     void resize_buffer_if_needed(size_t additional_bytes);
-    void stringify(std::ostream& os, char* start, char const* const end);
+    void stringify(rlottie_std::ostream& os, char* start, char const* const end);
 
 private:
     size_t                  m_bytes_used{0};
     size_t                  m_buffer_size{0};
-    std::unique_ptr<char[]> m_heap_buffer;
+    rlottie_std::unique_ptr<char[]> m_heap_buffer;
     bool                    m_logAll;
     char m_stack_buffer[256 - sizeof(bool) - 2 * sizeof(size_t) -
                         sizeof(decltype(m_heap_buffer)) - 8 /* Reserved */];
@@ -153,11 +150,11 @@ struct GuaranteedLogger {
  * etc.
  * log_file_roll_size_mb - mega bytes after which we roll to next log file.
  */
-void initialize(GuaranteedLogger gl, std::string const& log_directory,
-                std::string const& log_file_name,
+void initialize(GuaranteedLogger gl, rlottie_std::string const& log_directory,
+                rlottie_std::string const& log_file_name,
                 uint32_t           log_file_roll_size_mb);
-void initialize(NonGuaranteedLogger ngl, std::string const& log_directory,
-                std::string const& log_file_name,
+void initialize(NonGuaranteedLogger ngl, rlottie_std::string const& log_directory,
+                rlottie_std::string const& log_file_name,
                 uint32_t           log_file_roll_size_mb);
 
 #define VDEBUG_LOG(LEVEL) \

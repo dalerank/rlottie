@@ -17,9 +17,7 @@
  */
 
 #include "lottieitem.h"
-#include <algorithm>
 #include <cmath>
-#include <iterator>
 #include "lottiekeypath.h"
 #include "vbitmap.h"
 #include "vpainter.h"
@@ -102,7 +100,7 @@ LOTCompItem::LOTCompItem(LOTModel *model)
     mViewSize = mCompData->size();
 }
 
-void LOTCompItem::setValue(const std::string &keypath, LOTVariant &value)
+void LOTCompItem::setValue(const rlottie_std::string &keypath, LOTVariant &value)
 {
     LOTKeyPath key(keypath);
     mRootLayer->resolveKeyPath(key, 0, value);
@@ -130,7 +128,7 @@ bool LOTCompItem::update(int frameNo, const VSize &size, bool keepAspectRatio)
     float sx = float(viewPort.width()) / viewBox.width();
     float sy = float(viewPort.height()) / viewBox.height();
     if (mKeepAspectRatio) {
-        float scale = std::min(sx, sy);
+        float scale = rlottie_std::min<float>(sx, sy);
         float tx = (viewPort.width() - viewBox.width() * scale) * 0.5f;
         float ty = (viewPort.height() - viewBox.height() * scale) * 0.5f;
         m.translate(tx, ty).scale(scale, scale);
@@ -146,6 +144,7 @@ bool LOTCompItem::render(const rlottie::Surface &surface)
     mSurface.reset(reinterpret_cast<uchar *>(surface.buffer()),
                    uint(surface.width()), uint(surface.height()), uint(surface.bytesPerLine()),
                    VBitmap::Format::ARGB32_Premultiplied);
+    mSurface.setNeedClear(surface.isNeedClear());
 
     /* schedule all preprocess task for this frame at once.
      */
@@ -316,7 +315,7 @@ VRle LOTLayerMaskItem::maskRle(const VRect &clipRect)
 LOTLayerItem::LOTLayerItem(LOTLayerData *layerData) : mLayerData(layerData)
 {
     if (mLayerData->mHasMask)
-        mLayerMask = std::make_unique<LOTLayerMaskItem>(mLayerData);
+        mLayerMask = rlottie_std::make_unique<LOTLayerMaskItem>(mLayerData);
 }
 
 bool LOTLayerItem::resolveKeyPath(LOTKeyPath &keyPath, uint depth,
@@ -453,7 +452,7 @@ LOTCompLayerItem::LOTCompLayerItem(LOTLayerData *layerModel, VArenaAlloc* alloca
         int id = layer->parentId();
         if (id >= 0) {
             auto search =
-                std::find_if(mLayers.begin(), mLayers.end(),
+                rlottie_std::find_if(mLayers.begin(), mLayers.end(),
                              [id](const auto &val) { return val->id() == id; });
             if (search != mLayers.end()) layer->setParentLayer(*search);
         }
@@ -461,7 +460,7 @@ LOTCompLayerItem::LOTCompLayerItem(LOTLayerData *layerModel, VArenaAlloc* alloca
 
     // 4. check if its a nested composition
     if (!layerModel->layerSize().empty()) {
-        mClipper = std::make_unique<LOTClipperItem>(layerModel->layerSize());
+        mClipper = rlottie_std::make_unique<LOTClipperItem>(layerModel->layerSize());
     }
 
     if (mLayers.size() > 1) setComplexContent(true);
@@ -788,7 +787,7 @@ LOTShapeLayerItem::LOTShapeLayerItem(LOTLayerData *layerData, VArenaAlloc* alloc
 {
     mRoot->addChildren(layerData, allocator);
 
-    std::vector<LOTPathDataItem *> list;
+    rlottie_std::vector<LOTPathDataItem *> list;
     mRoot->processPaintItems(list);
 
     if (layerData->hasPathOperator()) {
@@ -955,7 +954,7 @@ void LOTContentGroupItem::applyTrim()
     }
 }
 
-void LOTContentGroupItem::renderList(std::vector<VDrawable *> &list)
+void LOTContentGroupItem::renderList(rlottie_std::vector<VDrawable *> &list)
 {
     for (const auto &content : mContents) {
         content->renderList(list);
@@ -963,7 +962,7 @@ void LOTContentGroupItem::renderList(std::vector<VDrawable *> &list)
 }
 
 void LOTContentGroupItem::processPaintItems(
-    std::vector<LOTPathDataItem *> &list)
+    rlottie_std::vector<LOTPathDataItem *> &list)
 {
     size_t curOpCount = list.size();
     for (auto i = mContents.rbegin(); i != mContents.rend(); ++i) {
@@ -991,7 +990,7 @@ void LOTContentGroupItem::processPaintItems(
     }
 }
 
-void LOTContentGroupItem::processTrimItems(std::vector<LOTPathDataItem *> &list)
+void LOTContentGroupItem::processTrimItems(rlottie_std::vector<LOTPathDataItem *> &list)
 {
     size_t curOpCount = list.size();
     for (auto i = mContents.rbegin(); i != mContents.rend(); ++i) {
@@ -1175,7 +1174,7 @@ void LOTPaintDataItem::updateRenderNode()
     }
 }
 
-void LOTPaintDataItem::renderList(std::vector<VDrawable *> &list)
+void LOTPaintDataItem::renderList(rlottie_std::vector<VDrawable *> &list)
 {
     if (mRenderNodeUpdate) {
         updateRenderNode();
@@ -1193,10 +1192,10 @@ void LOTPaintDataItem::renderList(std::vector<VDrawable *> &list)
     if (mContentToRender) list.push_back(&mDrawable);
 }
 
-void LOTPaintDataItem::addPathItems(std::vector<LOTPathDataItem *> &list,
+void LOTPaintDataItem::addPathItems(rlottie_std::vector<LOTPathDataItem *> &list,
                                     size_t                          startOffset)
 {
-    std::copy(list.begin() + startOffset, list.end(),
+    rlottie_std::copy(list.begin() + startOffset, list.end(),
               back_inserter(mPathItems));
 }
 
@@ -1248,7 +1247,7 @@ LOTStrokeItem::LOTStrokeItem(LOTStrokeData *data)
     }
 }
 
-static thread_local std::vector<float> Dash_Vector;
+static thread_local rlottie_std::vector<float> Dash_Vector;
 
 bool LOTStrokeItem::updateContent(int frameNo, const VMatrix &matrix, float alpha)
 {
@@ -1342,7 +1341,7 @@ void LOTTrimItem::update()
         return;
     }
 
-    if (vCompare(std::fabs(mCache.mSegment.start - mCache.mSegment.end), 1)) {
+    if (vCompare(rlottie_std::fabs(mCache.mSegment.start - mCache.mSegment.end), 1)) {
         for (auto &i : mPathItems) {
             i->updatePath(i->localPath());
         }
@@ -1395,10 +1394,10 @@ void LOTTrimItem::update()
     }
 }
 
-void LOTTrimItem::addPathItems(std::vector<LOTPathDataItem *> &list,
+void LOTTrimItem::addPathItems(rlottie_std::vector<LOTPathDataItem *> &list,
                                size_t                          startOffset)
 {
-    std::copy(list.begin() + startOffset, list.end(),
+    rlottie_std::copy(list.begin() + startOffset, list.end(),
               back_inserter(mPathItems));
 }
 
@@ -1452,7 +1451,7 @@ void LOTRepeaterItem::update(int frameNo, const VMatrix &parentMatrix,
     }
 }
 
-void LOTRepeaterItem::renderList(std::vector<VDrawable *> &list)
+void LOTRepeaterItem::renderList(rlottie_std::vector<VDrawable *> &list)
 {
     if (mHidden) return;
     return LOTContentGroupItem::renderList(list);

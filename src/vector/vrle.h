@@ -19,7 +19,6 @@
 #ifndef VRLE_H
 #define VRLE_H
 
-#include <vector>
 #include "vcowptr.h"
 #include "vglobal.h"
 #include "vpoint.h"
@@ -84,7 +83,7 @@ public:
         void  opIntersect(const VRle::VRleData &, const VRle::VRleData &);
         void  addRect(const VRect &rect);
         void  clone(const VRle::VRleData &);
-        std::vector<VRle::Span> mSpans;
+        rlottie_std::vector<VRle::Span> mSpans;
         VPoint                  mOffset;
         mutable VRect           mBbox;
         mutable bool            mBboxDirty = true;

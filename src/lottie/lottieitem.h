@@ -19,9 +19,6 @@
 #ifndef LOTTIEITEM_H
 #define LOTTIEITEM_H
 
-#include<sstream>
-#include<memory>
-
 #include"lottieproxymodel.h"
 #include"vmatrix.h"
 #include"vpath.h"
@@ -53,7 +50,7 @@ class LOTDrawable : public VDrawable
 public:
     void sync();
 public:
-    std::unique_ptr<LOTNode>  mCNode{nullptr};
+    rlottie_std::unique_ptr<LOTNode>  mCNode{nullptr};
 
     ~LOTDrawable() {
         if (mCNode && mCNode->mGradient.stopPtr)
@@ -70,7 +67,7 @@ public:
    void buildRenderTree();
    const LOTLayerNode * renderTree()const;
    bool render(const rlottie::Surface &surface);
-   void setValue(const std::string &keypath, LOTVariant &value);
+   void setValue(const rlottie_std::string &keypath, LOTVariant &value);
 private:
    VBitmap                                     mSurface;
    VMatrix                                     mScaleMatrix;
@@ -105,9 +102,9 @@ struct LOTCApiData
 {
     LOTCApiData();
     LOTLayerNode                  mLayer;
-    std::vector<LOTMask>          mMasks;
-    std::vector<LOTLayerNode *>   mLayers;
-    std::vector<LOTNode *>        mCNodeList;
+    rlottie_std::vector<LOTMask>          mMasks;
+    rlottie_std::vector<LOTLayerNode *>   mLayers;
+    rlottie_std::vector<LOTNode *>        mCNodeList;
 };
 
 template< class T>
@@ -163,9 +160,9 @@ public:
    bool visible() const;
    virtual void buildLayerNode();
    LOTLayerNode& clayer() {return mCApiData->mLayer;}
-   std::vector<LOTLayerNode *>& clayers() {return mCApiData->mLayers;}
-   std::vector<LOTMask>& cmasks() {return mCApiData->mMasks;}
-   std::vector<LOTNode *>& cnodes() {return mCApiData->mCNodeList;}
+   rlottie_std::vector<LOTLayerNode *>& clayers() {return mCApiData->mLayers;}
+   rlottie_std::vector<LOTMask>& cmasks() {return mCApiData->mMasks;}
+   rlottie_std::vector<LOTNode *>& cnodes() {return mCApiData->mCNodeList;}
    const char* name() const {return mLayerData->name();}
    virtual bool resolveKeyPath(LOTKeyPath &keyPath, uint depth, LOTVariant &value);
    VBitmap& bitmap() {return mRenderBuffer;}
@@ -180,7 +177,7 @@ protected:
    inline DirtyFlag flag() const {return mDirtyFlag;}
    bool skipRendering() const {return (!visible() || vIsZero(combinedAlpha()));}
 protected:
-   std::unique_ptr<LOTLayerMaskItem>           mLayerMask;
+   rlottie_std::unique_ptr<LOTLayerMaskItem>   mLayerMask;
    LOTLayerData                               *mLayerData{nullptr};
    LOTLayerItem                               *mParentLayer{nullptr};
    VMatrix                                     mCombinedMatrix;
@@ -189,7 +186,7 @@ protected:
    int                                         mFrameNo{-1};
    DirtyFlag                                   mDirtyFlag{DirtyFlagBit::All};
    bool                                        mComplexContent{false};
-   std::unique_ptr<LOTCApiData>                mCApiData;
+   rlottie_std::unique_ptr<LOTCApiData>        mCApiData;
 };
 
 class LOTCompLayerItem: public LOTLayerItem
@@ -208,8 +205,8 @@ private:
     void renderMatteLayer(VPainter *painter, const VRle &inheritMask, const VRle &matteRle,
                           LOTLayerItem *layer, LOTLayerItem *src);
 private:
-   std::vector<LOTLayerItem*>            mLayers;
-   std::unique_ptr<LOTClipperItem>       mClipper;
+   rlottie_std::vector<LOTLayerItem*>            mLayers;
+   rlottie_std::unique_ptr<LOTClipperItem>       mClipper;
 };
 
 class LOTSolidLayerItem: public LOTLayerItem
@@ -238,7 +235,7 @@ public:
 protected:
    void preprocessStage(const VRect& clip) final;
    void updateContent() final;
-   std::vector<VDrawable *>             mDrawableList;
+   rlottie_std::vector<VDrawable *>     mDrawableList;
    LOTContentGroupItem                 *mRoot{nullptr};
 };
 
@@ -295,7 +292,7 @@ public:
     VRle maskRle(const VRect &clipRect);
     void preprocess(const VRect &clip);
 public:
-    std::vector<LOTMaskItem>   mMasks;
+    rlottie_std::vector<LOTMaskItem>   mMasks;
     VRle                       mRle;
     bool                       mStatic{true};
     bool                       mDirty{true};
@@ -320,7 +317,7 @@ class LOTContentItem
 public:
    virtual ~LOTContentItem() = default;
    LOTContentItem& operator=(LOTContentItem&&) noexcept = delete;
-   virtual void update(int frameNo, const VMatrix &parentMatrix, float parentAlpha, const DirtyFlag &flag) = 0;   virtual void renderList(std::vector<VDrawable *> &){}
+   virtual void update(int frameNo, const VMatrix &parentMatrix, float parentAlpha, const DirtyFlag &flag) = 0;   virtual void renderList(rlottie_std::vector<VDrawable *> &){}
    virtual bool resolveKeyPath(LOTKeyPath &, uint, LOTVariant &) {return false;}
    virtual ContentType type() const {return ContentType::Unknown;}
 };
@@ -333,9 +330,9 @@ public:
    void addChildren(LOTGroupData *data, VArenaAlloc* allocator);
    void update(int frameNo, const VMatrix &parentMatrix, float parentAlpha, const DirtyFlag &flag) override;
    void applyTrim();
-   void processTrimItems(std::vector<LOTPathDataItem *> &list);
-   void processPaintItems(std::vector<LOTPathDataItem *> &list);
-   void renderList(std::vector<VDrawable *> &list) override;
+   void processTrimItems(rlottie_std::vector<LOTPathDataItem *> &list);
+   void processPaintItems(rlottie_std::vector<LOTPathDataItem *> &list);
+   void renderList(rlottie_std::vector<VDrawable *> &list) override;
    ContentType type() const final {return ContentType::Group;}
    const VMatrix & matrix() const { return mMatrix;}
    const char* name() const
@@ -345,7 +342,7 @@ public:
    }
    bool resolveKeyPath(LOTKeyPath &keyPath, uint depth, LOTVariant &value) override;
 protected:
-   std::vector<LOTContentItem*>   mContents;
+   rlottie_std::vector<LOTContentItem*>   mContents;
    VMatrix                                        mMatrix;
 private:
    LOTProxyModel<LOTGroupData> mModel;
@@ -449,16 +446,16 @@ class LOTPaintDataItem : public LOTContentItem
 {
 public:
    LOTPaintDataItem(bool staticContent);
-   void addPathItems(std::vector<LOTPathDataItem *> &list, size_t startOffset);
+   void addPathItems(rlottie_std::vector<LOTPathDataItem *> &list, size_t startOffset);
    void update(int frameNo, const VMatrix &parentMatrix, float parentAlpha, const DirtyFlag &flag) override;
-   void renderList(std::vector<VDrawable *> &list) final;
+   void renderList(rlottie_std::vector<VDrawable *> &list) final;
    ContentType type() const final {return ContentType::Paint;}
 protected:
    virtual bool updateContent(int frameNo, const VMatrix &matrix, float alpha) = 0;
 private:
    void updateRenderNode();
 protected:
-   std::vector<LOTPathDataItem *>   mPathItems;
+   rlottie_std::vector<LOTPathDataItem *>   mPathItems;
    LOTDrawable                      mDrawable;
    VPath                            mPath;
    DirtyFlag                        mFlag;
@@ -486,7 +483,7 @@ protected:
    bool updateContent(int frameNo, const VMatrix &matrix, float alpha) final;
 private:
    LOTGFillData                 *mData{nullptr};
-   std::unique_ptr<VGradient>    mGradient;
+   rlottie_std::unique_ptr<VGradient>    mGradient;
 };
 
 class LOTStrokeItem : public LOTPaintDataItem
@@ -508,7 +505,7 @@ protected:
    bool updateContent(int frameNo, const VMatrix &matrix, float alpha) final;
 private:
    LOTGStrokeData               *mData{nullptr};
-   std::unique_ptr<VGradient>    mGradient;
+   rlottie_std::unique_ptr<VGradient>    mGradient;
 };
 
 
@@ -521,7 +518,7 @@ public:
    void update(int frameNo, const VMatrix &parentMatrix, float parentAlpha, const DirtyFlag &flag) final;
    ContentType type() const final {return ContentType::Trim;}
    void update();
-   void addPathItems(std::vector<LOTPathDataItem *> &list, size_t startOffset);
+   void addPathItems(rlottie_std::vector<LOTPathDataItem *> &list, size_t startOffset);
 private:
    bool pathDirty() const {
        for (auto &i : mPathItems) {
@@ -535,7 +532,7 @@ private:
         LOTTrimData::Segment    mSegment{};
    };
    Cache                            mCache;
-   std::vector<LOTPathDataItem *>   mPathItems;
+   rlottie_std::vector<LOTPathDataItem *>   mPathItems;
    LOTTrimData                     *mData{nullptr};
    VPathMesure                      mPathMesure;
    bool                             mDirty{true};
@@ -546,7 +543,7 @@ class LOTRepeaterItem : public LOTContentGroupItem
 public:
    explicit LOTRepeaterItem(LOTRepeaterData *data, VArenaAlloc* allocator);
    void update(int frameNo, const VMatrix &parentMatrix, float parentAlpha, const DirtyFlag &flag) final;
-   void renderList(std::vector<VDrawable *> &list) final;
+   void renderList(rlottie_std::vector<VDrawable *> &list) final;
 private:
    LOTRepeaterData             *mRepeaterData{nullptr};
    bool                         mHidden{false};

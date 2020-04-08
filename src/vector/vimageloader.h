@@ -1,8 +1,6 @@
 #ifndef VIMAGELOADER_H
 #define VIMAGELOADER_H
 
-#include <memory>
-
 #include "vbitmap.h"
 
 class VImageLoader
@@ -20,7 +18,7 @@ public:
 private:
     VImageLoader();
     struct Impl;
-    std::unique_ptr<Impl> mImpl;
+    rlottie_std::unique_ptr<Impl> mImpl;
 };
 
 #endif // VIMAGELOADER_H

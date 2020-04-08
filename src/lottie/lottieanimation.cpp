@@ -21,8 +21,6 @@
 #include "lottiemodel.h"
 #include "rlottie.h"
 
-#include <fstream>
-
 using namespace rlottie;
 
 LOT_EXPORT void rlottie::configureModelCacheSize(size_t cacheSize)
@@ -32,18 +30,18 @@ LOT_EXPORT void rlottie::configureModelCacheSize(size_t cacheSize)
 
 struct RenderTask {
     RenderTask() { receiver = sender.get_future(); }
-    std::promise<Surface> sender;
-    std::future<Surface>  receiver;
+    rlottie_std::promise<Surface> sender;
+    rlottie_std::future<Surface>  receiver;
     AnimationImpl *       playerImpl{nullptr};
     size_t                frameNo{0};
     Surface               surface;
     bool                  keepAspectRatio{true};
 };
-using SharedRenderTask = std::shared_ptr<RenderTask>;
+using SharedRenderTask = rlottie_std::shared_ptr<RenderTask>;
 
 class AnimationImpl {
 public:
-    void    init(const std::shared_ptr<LOTModel> &model);
+    void    init(const rlottie_std::shared_ptr<LOTModel> &model);
     bool    update(size_t frameNo, const VSize &size, bool keepAspectRatio);
     VSize   size() const { return mModel->size(); }
     double  duration() const { return mModel->duration(); }
@@ -51,7 +49,7 @@ public:
     size_t  totalFrame() const { return mModel->totalFrame(); }
     size_t  frameAtPos(double pos) const { return mModel->frameAtPos(pos); }
     Surface render(size_t frameNo, const Surface &surface, bool keepAspectRatio);
-    std::future<Surface> renderAsync(size_t frameNo, Surface &&surface, bool keepAspectRatio);
+    rlottie_std::future<Surface> renderAsync(size_t frameNo, Surface &&surface, bool keepAspectRatio);
     const LOTLayerNode * renderTree(size_t frameNo, const VSize &size);
 
     const LayerInfoList &layerInfoList() const
@@ -65,19 +63,19 @@ public:
     {
         return mModel->markers();
     }
-    void setValue(const std::string &keypath, LOTVariant &&value);
-    void removeFilter(const std::string &keypath, Property prop);
+    void setValue(const rlottie_std::string &keypath, LOTVariant &&value);
+    void removeFilter(const rlottie_std::string &keypath, Property prop);
 
 private:
     mutable LayerInfoList        mLayerList;
-    std::string                  mFilePath;
-    std::shared_ptr<LOTModel>    mModel;
-    std::unique_ptr<LOTCompItem> mCompItem;
+    rlottie_std::string                  mFilePath;
+    rlottie_std::shared_ptr<LOTModel>    mModel;
+    rlottie_std::unique_ptr<LOTCompItem> mCompItem;
     SharedRenderTask             mTask;
-    std::atomic<bool>            mRenderInProgress;
+    rlottie_std::atomic<bool>            mRenderInProgress;
 };
 
-void AnimationImpl::setValue(const std::string &keypath, LOTVariant &&value)
+void AnimationImpl::setValue(const rlottie_std::string &keypath, LOTVariant &&value)
 {
     if (keypath.empty()) return;
     mCompItem->setValue(keypath, value);
@@ -119,10 +117,10 @@ Surface AnimationImpl::render(size_t frameNo, const Surface &surface, bool keepA
     return surface;
 }
 
-void AnimationImpl::init(const std::shared_ptr<LOTModel> &model)
+void AnimationImpl::init(const rlottie_std::shared_ptr<LOTModel> &model)
 {
     mModel = model;
-    mCompItem = std::make_unique<LOTCompItem>(mModel.get());
+    mCompItem = rlottie_std::make_unique<LOTCompItem>(mModel.get());
     mRenderInProgress = false;
 }
 
@@ -143,10 +141,10 @@ void AnimationImpl::init(const std::shared_ptr<LOTModel> &model)
  * just waits for new task on its own queue.
  */
 class RenderTaskScheduler {
-    const unsigned           _count{std::thread::hardware_concurrency()};
-    std::vector<std::thread> _threads;
-    std::vector<TaskQueue<SharedRenderTask>> _q{_count};
-    std::atomic<unsigned>                    _index{0};
+    const unsigned           _count{rlottie_std::thread::hardware_concurrency()};
+    rlottie_std::vector<rlottie_std::thread> _threads;
+    rlottie_std::vector<TaskQueue<SharedRenderTask>> _q{_count};
+    rlottie_std::atomic<unsigned>                    _index{0};
 
     void run(unsigned i)
     {
@@ -188,17 +186,17 @@ public:
         for (auto &e : _threads) e.join();
     }
 
-    std::future<Surface> process(SharedRenderTask task)
+    rlottie_std::future<Surface> process(SharedRenderTask task)
     {
-        auto receiver = std::move(task->receiver);
+        auto receiver = rlottie_std::move(task->receiver);
         auto i = _index++;
 
         for (unsigned n = 0; n != _count; ++n) {
-            if (_q[(i + n) % _count].try_push(std::move(task))) return receiver;
+            if (_q[(i + n) % _count].try_push(rlottie_std::move(task))) return receiver;
         }
 
         if (_count > 0) {
-            _q[i % _count].push(std::move(task));
+            _q[i % _count].push(rlottie_std::move(task));
         }
 
         return receiver;
@@ -214,28 +212,28 @@ public:
         return singleton;
     }
 
-    std::future<Surface> process(SharedRenderTask task)
+    rlottie_std::future<Surface> process(SharedRenderTask task)
     {
         auto result = task->playerImpl->render(task->frameNo, task->surface, task->keepAspectRatio);
         task->sender.set_value(result);
-        return std::move(task->receiver);
+        return rlottie_std::move(task->receiver);
     }
 };
 #endif
 
-std::future<Surface> AnimationImpl::renderAsync(size_t    frameNo,
+rlottie_std::future<Surface> AnimationImpl::renderAsync(size_t    frameNo,
                                                 Surface &&surface,
                                                 bool keepAspectRatio)
 {
     if (!mTask) {
-        mTask = std::make_shared<RenderTask>();
+        mTask = rlottie_std::make_shared<RenderTask>();
     } else {
-        mTask->sender = std::promise<Surface>();
+        mTask->sender = rlottie_std::promise<Surface>();
         mTask->receiver = mTask->sender.get_future();
     }
     mTask->playerImpl = this;
     mTask->frameNo = frameNo;
-    mTask->surface = std::move(surface);
+    mTask->surface = rlottie_std::move(surface);
     mTask->keepAspectRatio = keepAspectRatio;
 
     return RenderTaskScheduler::instance().process(mTask);
@@ -246,9 +244,9 @@ std::future<Surface> AnimationImpl::renderAsync(size_t    frameNo,
  * Description about the setFilePath Api
  * @param path  add the details
  */
-std::unique_ptr<Animation> Animation::loadFromData(
-    std::string jsonData, const std::string &key,
-    const std::string &resourcePath, bool cachePolicy)
+rlottie_std::unique_ptr<Animation> Animation::loadFromData(
+    rlottie_std::string jsonData, const rlottie_std::string &key,
+    const rlottie_std::string &resourcePath, bool cachePolicy)
 {
     if (jsonData.empty()) {
         vWarning << "jason data is empty";
@@ -256,17 +254,17 @@ std::unique_ptr<Animation> Animation::loadFromData(
     }
 
     LottieLoader loader;
-    if (loader.loadFromData(std::move(jsonData), key,
+    if (loader.loadFromData(rlottie_std::move(jsonData), key,
                             (resourcePath.empty() ? " " : resourcePath), cachePolicy)) {
-        auto animation = std::unique_ptr<Animation>(new Animation);
+        auto animation = rlottie_std::unique_ptr<Animation>(new Animation);
         animation->d->init(loader.model());
         return animation;
     }
     return nullptr;
 }
 
-std::unique_ptr<Animation>
-Animation::loadFromFile(const std::string &path, bool cachePolicy)
+rlottie_std::unique_ptr<Animation>
+Animation::loadFromFile(const rlottie_std::string &path, bool cachePolicy)
 {
     if (path.empty()) {
         vWarning << "File path is empty";
@@ -275,7 +273,7 @@ Animation::loadFromFile(const std::string &path, bool cachePolicy)
 
     LottieLoader loader;
     if (loader.load(path, cachePolicy)) {
-        auto animation = std::unique_ptr<Animation>(new Animation);
+        auto animation = rlottie_std::unique_ptr<Animation>(new Animation);
         animation->d->init(loader.model());
         return animation;
     }
@@ -316,9 +314,9 @@ const LOTLayerNode *Animation::renderTree(size_t frameNo, size_t width,
     return d->renderTree(frameNo, VSize(int(width), int(height)));
 }
 
-std::future<Surface> Animation::render(size_t frameNo, Surface surface, bool keepAspectRatio)
+rlottie_std::future<Surface> Animation::render(size_t frameNo, Surface surface, bool keepAspectRatio)
 {
-    return d->renderAsync(frameNo, std::move(surface), keepAspectRatio);
+    return d->renderAsync(frameNo, rlottie_std::move(surface), keepAspectRatio);
 }
 
 void Animation::renderSync(size_t frameNo, Surface surface, bool keepAspectRatio)
@@ -336,60 +334,60 @@ const MarkerList &Animation::markers() const
     return d->markers();
 }
 
-void Animation::setValue(Color_Type, Property prop, const std::string &keypath,
+void Animation::setValue(Color_Type, Property prop, const rlottie_std::string &keypath,
                          Color value)
 {
     d->setValue(keypath,
                 LOTVariant(prop, [value](const FrameInfo &) { return value; }));
 }
 
-void Animation::setValue(Float_Type, Property prop, const std::string &keypath,
+void Animation::setValue(Float_Type, Property prop, const rlottie_std::string &keypath,
                          float value)
 {
     d->setValue(keypath,
                 LOTVariant(prop, [value](const FrameInfo &) { return value; }));
 }
 
-void Animation::setValue(Size_Type, Property prop, const std::string &keypath,
+void Animation::setValue(Size_Type, Property prop, const rlottie_std::string &keypath,
                          Size value)
 {
     d->setValue(keypath,
                 LOTVariant(prop, [value](const FrameInfo &) { return value; }));
 }
 
-void Animation::setValue(Point_Type, Property prop, const std::string &keypath,
+void Animation::setValue(Point_Type, Property prop, const rlottie_std::string &keypath,
                          Point value)
 {
     d->setValue(keypath,
                 LOTVariant(prop, [value](const FrameInfo &) { return value; }));
 }
 
-void Animation::setValue(Color_Type, Property prop, const std::string &keypath,
-                         std::function<Color(const FrameInfo &)> &&value)
+void Animation::setValue(Color_Type, Property prop, const rlottie_std::string &keypath,
+                         rlottie_std::function<Color(const FrameInfo &)> &&value)
 {
     d->setValue(keypath, LOTVariant(prop, value));
 }
 
-void Animation::setValue(Float_Type, Property prop, const std::string &keypath,
-                         std::function<float(const FrameInfo &)> &&value)
+void Animation::setValue(Float_Type, Property prop, const rlottie_std::string &keypath,
+                         rlottie_std::function<float(const FrameInfo &)> &&value)
 {
     d->setValue(keypath, LOTVariant(prop, value));
 }
 
-void Animation::setValue(Size_Type, Property prop, const std::string &keypath,
-                         std::function<Size(const FrameInfo &)> &&value)
+void Animation::setValue(Size_Type, Property prop, const rlottie_std::string &keypath,
+                         rlottie_std::function<Size(const FrameInfo &)> &&value)
 {
     d->setValue(keypath, LOTVariant(prop, value));
 }
 
-void Animation::setValue(Point_Type, Property prop, const std::string &keypath,
-                         std::function<Point(const FrameInfo &)> &&value)
+void Animation::setValue(Point_Type, Property prop, const rlottie_std::string &keypath,
+                         rlottie_std::function<Point(const FrameInfo &)> &&value)
 {
     d->setValue(keypath, LOTVariant(prop, value));
 }
 
 Animation::~Animation() = default;
-Animation::Animation() : d(std::make_unique<AnimationImpl>()) {}
+Animation::Animation() : d(rlottie_std::make_unique<AnimationImpl>()) {}
 
 Surface::Surface(uint32_t *buffer, size_t width, size_t height,
                  size_t bytesPerLine)

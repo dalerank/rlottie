@@ -205,7 +205,7 @@ struct VImageLoader::Impl {
     }
 };
 
-VImageLoader::VImageLoader() : mImpl(std::make_unique<VImageLoader::Impl>()) {}
+VImageLoader::VImageLoader() : mImpl(rlottie_std::make_unique<VImageLoader::Impl>()) {}
 
 VImageLoader::~VImageLoader() {}
 

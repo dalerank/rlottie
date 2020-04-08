@@ -18,8 +18,6 @@
 
 #include "lottiemodel.h"
 #include <cassert>
-#include <iterator>
-#include <stack>
 #include "vimageloader.h"
 #include "vline.h"
 
@@ -56,7 +54,7 @@ public:
                 //   object before the repeater
                 ++i;
                 // 2. move all the children till repater to the group
-                std::move(obj->mChildren.begin(), i.base(),
+                rlottie_std::move(obj->mChildren.begin(), i.base(),
                           back_inserter(content->mChildren));
                 // 3. erase the objects from the original children list
                 obj->mChildren.erase(obj->mChildren.begin(), i.base());
@@ -155,8 +153,8 @@ void LOTCompositionData::updateStats()
 VMatrix LOTRepeaterTransform::matrix(int frameNo, float multiplier) const
 {
     VPointF scale = mScale.value(frameNo) / 100.f;
-    scale.setX(std::pow(scale.x(), multiplier));
-    scale.setY(std::pow(scale.y(), multiplier));
+    scale.setX(rlottie_std::pow(scale.x(), multiplier));
+    scale.setY(rlottie_std::pow(scale.y(), multiplier));
     VMatrix m;
     m.translate(mPosition.value(frameNo) * multiplier)
         .translate(mAnchor.value(frameNo))
@@ -195,7 +193,7 @@ VMatrix TransformData::matrix(int frameNo, bool autoOrient) const
     return m;
 }
 
-void LOTDashProperty::getDashInfo(int frameNo, std::vector<float>& result) const
+void LOTDashProperty::getDashInfo(int frameNo, rlottie_std::vector<float>& result) const
 {
     result.clear();
 
@@ -264,12 +262,12 @@ void LOTGradient::populate(VGradientStops &stops, int frameNo)
                 float op2 = opacityPtr[j - 1];
                 if (colorStop > stop2) {
                     stops.push_back(
-                        std::make_pair(colorStop, color.toColor(op2)));
+                        rlottie_std::make_pair(colorStop, color.toColor(op2)));
                 } else {
                     float progress = (colorStop - stop1) / (stop2 - stop1);
                     float opacity = op1 + progress * (op2 - op1);
                     stops.push_back(
-                        std::make_pair(colorStop, color.toColor(opacity)));
+                        rlottie_std::make_pair(colorStop, color.toColor(opacity)));
                 }
                 continue;
             }
@@ -277,13 +275,13 @@ void LOTGradient::populate(VGradientStops &stops, int frameNo)
                 float opacityStop = opacityPtr[j];
                 if (opacityStop < colorStop) {
                     // add a color using opacity stop
-                    stops.push_back(std::make_pair(
+                    stops.push_back(rlottie_std::make_pair(
                         opacityStop, color.toColor(opacityPtr[j + 1])));
                     continue;
                 }
                 // add a color using color stop
                 if (j == 0) {
-                    stops.push_back(std::make_pair(
+                    stops.push_back(rlottie_std::make_pair(
                         colorStop, color.toColor(opacityPtr[j + 1])));
                 } else {
                     float progress = (colorStop - opacityPtr[j - 2]) /
@@ -292,26 +290,26 @@ void LOTGradient::populate(VGradientStops &stops, int frameNo)
                         opacityPtr[j - 1] +
                         progress * (opacityPtr[j + 1] - opacityPtr[j - 1]);
                     stops.push_back(
-                        std::make_pair(colorStop, color.toColor(opacity)));
+                        rlottie_std::make_pair(colorStop, color.toColor(opacity)));
                 }
                 j += 2;
                 break;
             }
         } else {
-            stops.push_back(std::make_pair(colorStop, color.toColor()));
+            stops.push_back(rlottie_std::make_pair(colorStop, color.toColor()));
         }
         ptr += 4;
     }
 }
 
-void LOTGradient::update(std::unique_ptr<VGradient> &grad, int frameNo)
+void LOTGradient::update(rlottie_std::unique_ptr<VGradient> &grad, int frameNo)
 {
     bool init = false;
     if (!grad) {
         if (mGradientType == 1)
-            grad = std::make_unique<VGradient>(VGradient::Type::Linear);
+            grad = rlottie_std::make_unique<VGradient>(VGradient::Type::Linear);
         else
-            grad = std::make_unique<VGradient>(VGradient::Type::Radial);
+            grad = rlottie_std::make_unique<VGradient>(VGradient::Type::Radial);
         grad->mSpread = VGradient::Spread::Pad;
         init = true;
     }
@@ -349,30 +347,30 @@ void LOTGradient::update(std::unique_ptr<VGradient> &grad, int frameNo)
         static constexpr float K_PI = 3.1415926f;
         float angle = (startAngle + highlightAngle) * (K_PI / 180.0f);
         grad->radial.fx =
-            grad->radial.cx + std::cos(angle) * progress * grad->radial.cradius;
+            grad->radial.cx + rlottie_std::cos(angle) * progress * grad->radial.cradius;
         grad->radial.fy =
-            grad->radial.cy + std::sin(angle) * progress * grad->radial.cradius;
+            grad->radial.cy + rlottie_std::sin(angle) * progress * grad->radial.cradius;
         // Lottie dosen't have any focal radius concept.
         grad->radial.fradius = 0;
     }
 }
 
-void LOTAsset::loadImageData(std::string data)
+void LOTAsset::loadImageData(rlottie_std::string data)
 {
     if (!data.empty())
         mBitmap = VImageLoader::instance().load(data.c_str(), data.length());
 }
 
-void LOTAsset::loadImagePath(std::string path)
+void LOTAsset::loadImagePath(rlottie_std::string path)
 {
     if (!path.empty()) mBitmap = VImageLoader::instance().load(path.c_str());
 }
 
-std::vector<LayerInfo> LOTCompositionData::layerInfoList() const
+rlottie_std::vector<LayerInfo> LOTCompositionData::layerInfoList() const
 {
     if (!mRootLayer || mRootLayer->mChildren.empty()) return {};
 
-    std::vector<LayerInfo> result;
+    rlottie_std::vector<LayerInfo> result;
 
     result.reserve(mRootLayer->mChildren.size());
 

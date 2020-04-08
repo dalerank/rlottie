@@ -19,11 +19,8 @@
 #ifndef _RLOTTIE_H_
 #define _RLOTTIE_H_
 
-#include <future>
-#include <vector>
-#include <memory>
-
-#include "lottie_export.h"
+#include "stl_config.h"
+#include "rlottiecommon.h"
 
 class AnimationImpl;
 struct LOTNode;
@@ -222,6 +219,9 @@ public:
      */
     size_t drawRegionPosY() const {return mDrawArea.y;}
 
+    bool isNeedClear() const { return mNeedClear; }
+    void setNeedClear(bool needClear) { mNeedClear = needClear; }
+
     /**
      *  @brief Default constructor.
      */
@@ -237,9 +237,10 @@ private:
         size_t   w{0};
         size_t   h{0};
     }mDrawArea;
+    bool mNeedClear{true};
 };
 
-using MarkerList = std::vector<std::tuple<std::string, int , int>>;
+using MarkerList = rlottie_std::vector<rlottie_std::tuple<rlottie_std::string, int , int>>;
 /**
  *  @brief https://helpx.adobe.com/after-effects/using/layer-markers-composition-markers.html
  *  Markers exported form AE are used to describe a segmnet of an animation {comment/tag , startFrame, endFrame}
@@ -247,7 +248,7 @@ using MarkerList = std::vector<std::tuple<std::string, int , int>>;
  *  start frame and duration of that segment.
  */
 
-using LayerInfoList = std::vector<std::tuple<std::string, int , int>>;
+using LayerInfoList = rlottie_std::vector<rlottie_std::tuple<rlottie_std::string, int , int>>;
 
 class LOT_EXPORT Animation {
 public:
@@ -266,8 +267,8 @@ public:
      *
      *  @internal
      */
-    static std::unique_ptr<Animation>
-    loadFromFile(const std::string &path, bool cachePolicy=true);
+    static rlottie_std::unique_ptr<Animation>
+    loadFromFile(const rlottie_std::string &path, bool cachePolicy=true);
 
     /**
      *  @brief Constructs an animation object from JSON string data.
@@ -285,9 +286,9 @@ public:
      *
      *  @internal
      */
-    static std::unique_ptr<Animation>
-    loadFromData(std::string jsonData, const std::string &key,
-                 const std::string &resourcePath="", bool cachePolicy=true);
+    static rlottie_std::unique_ptr<Animation>
+    loadFromData(rlottie_std::string jsonData, const rlottie_std::string &key,
+                 const rlottie_std::string &resourcePath="", bool cachePolicy=true);
 
     /**
      *  @brief Returns default framerate of the Lottie resource.
@@ -371,7 +372,7 @@ public:
      *  @see Surface
      *  @internal
      */
-    std::future<Surface> render(size_t frameNo, Surface surface, bool keepAspectRatio=true);
+    rlottie_std::future<Surface> render(size_t frameNo, Surface surface, bool keepAspectRatio=true);
 
     /**
      *  @brief Renders the content to surface synchronously.
@@ -439,9 +440,9 @@ public:
      *  @internal
      */
     template<Property prop, typename AnyValue>
-    void setValue(const std::string &keypath, AnyValue value)
+    void setValue(const rlottie_std::string &keypath, AnyValue value)
     {
-        setValue(MapType<std::integral_constant<Property, prop>>{}, prop, keypath, value);
+        setValue(MapType<rlottie_std::integral_constant<Property, prop>>{}, prop, keypath, value);
     }
 
     /**
@@ -452,15 +453,15 @@ public:
     ~Animation();
 
 private:
-    void setValue(Color_Type, Property, const std::string &, Color);
-    void setValue(Float_Type, Property, const std::string &, float);
-    void setValue(Size_Type, Property, const std::string &, Size);
-    void setValue(Point_Type, Property, const std::string &, Point);
+    void setValue(Color_Type, Property, const rlottie_std::string &, Color);
+    void setValue(Float_Type, Property, const rlottie_std::string &, float);
+    void setValue(Size_Type, Property, const rlottie_std::string &, Size);
+    void setValue(Point_Type, Property, const rlottie_std::string &, Point);
 
-    void setValue(Color_Type, Property, const std::string &, std::function<Color(const FrameInfo &)> &&);
-    void setValue(Float_Type, Property, const std::string &, std::function<float(const FrameInfo &)> &&);
-    void setValue(Size_Type, Property, const std::string &, std::function<Size(const FrameInfo &)> &&);
-    void setValue(Point_Type, Property, const std::string &, std::function<Point(const FrameInfo &)> &&);
+    void setValue(Color_Type, Property, const rlottie_std::string &, rlottie_std::function<Color(const FrameInfo &)> &&);
+    void setValue(Float_Type, Property, const rlottie_std::string &, rlottie_std::function<float(const FrameInfo &)> &&);
+    void setValue(Size_Type, Property, const rlottie_std::string &, rlottie_std::function<Size(const FrameInfo &)> &&);
+    void setValue(Point_Type, Property, const rlottie_std::string &, rlottie_std::function<Point(const FrameInfo &)> &&);
     /**
      *  @brief default constructor
      *
@@ -468,20 +469,20 @@ private:
      */
     Animation();
 
-    std::unique_ptr<AnimationImpl> d;
+    rlottie_std::unique_ptr<AnimationImpl> d;
 };
 
 //Map Property to Value type
-template<> struct MapType<std::integral_constant<Property, Property::FillColor>>: Color_Type{};
-template<> struct MapType<std::integral_constant<Property, Property::StrokeColor>>: Color_Type{};
-template<> struct MapType<std::integral_constant<Property, Property::FillOpacity>>: Float_Type{};
-template<> struct MapType<std::integral_constant<Property, Property::StrokeOpacity>>: Float_Type{};
-template<> struct MapType<std::integral_constant<Property, Property::StrokeWidth>>: Float_Type{};
-template<> struct MapType<std::integral_constant<Property, Property::TrRotation>>: Float_Type{};
-template<> struct MapType<std::integral_constant<Property, Property::TrOpacity>>: Float_Type{};
-template<> struct MapType<std::integral_constant<Property, Property::TrAnchor>>: Point_Type{};
-template<> struct MapType<std::integral_constant<Property, Property::TrPosition>>: Point_Type{};
-template<> struct MapType<std::integral_constant<Property, Property::TrScale>>: Size_Type{};
+template<> struct MapType<rlottie_std::integral_constant<Property, Property::FillColor>>: Color_Type{};
+template<> struct MapType<rlottie_std::integral_constant<Property, Property::StrokeColor>>: Color_Type{};
+template<> struct MapType<rlottie_std::integral_constant<Property, Property::FillOpacity>>: Float_Type{};
+template<> struct MapType<rlottie_std::integral_constant<Property, Property::StrokeOpacity>>: Float_Type{};
+template<> struct MapType<rlottie_std::integral_constant<Property, Property::StrokeWidth>>: Float_Type{};
+template<> struct MapType<rlottie_std::integral_constant<Property, Property::TrRotation>>: Float_Type{};
+template<> struct MapType<rlottie_std::integral_constant<Property, Property::TrOpacity>>: Float_Type{};
+template<> struct MapType<rlottie_std::integral_constant<Property, Property::TrAnchor>>: Point_Type{};
+template<> struct MapType<rlottie_std::integral_constant<Property, Property::TrPosition>>: Point_Type{};
+template<> struct MapType<rlottie_std::integral_constant<Property, Property::TrScale>>: Size_Type{};
 
 
 }  // namespace lotplayer

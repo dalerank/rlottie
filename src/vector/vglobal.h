@@ -21,9 +21,8 @@
 
 #include <cmath>
 #include <cstdint>
-#include <iostream>
-#include <type_traits>
-#include <utility>
+
+#include "stl_config.h"
 
 using uint   = uint32_t;
 using ushort = uint16_t;
@@ -86,17 +85,17 @@ static const float  EPSILON_FLOAT = 0.000001f;
 
 static inline bool vCompare(float p1, float p2)
 {
-    return (std::abs(p1 - p2) < EPSILON_FLOAT);
+    return (rlottie_std::abs(p1 - p2) < EPSILON_FLOAT);
 }
 
 static inline bool vIsZero(float f)
 {
-    return (std::abs(f) <= EPSILON_FLOAT);
+    return (rlottie_std::abs(f) <= EPSILON_FLOAT);
 }
 
 static inline bool vIsZero(double f)
 {
-    return (std::abs(f) <= EPSILON_DOUBLE);
+    return (rlottie_std::abs(f) <= EPSILON_DOUBLE);
 }
 
 class vFlagHelper {
@@ -118,11 +117,11 @@ public:
     static_assert(
         (sizeof(Enum) <= sizeof(int)),
         "vFlag only supports int as storage so bigger type will overflow");
-    static_assert((std::is_enum<Enum>::value),
+    static_assert((rlottie_std::is_enum<Enum>::value),
                   "vFlag is only usable on enumeration types.");
 
-    using Int = typename std::conditional<
-        std::is_unsigned<typename std::underlying_type<Enum>::type>::value,
+    using Int = typename rlottie_std::conditional<
+        rlottie_std::is_unsigned<typename rlottie_std::underlying_type<Enum>::type>::value,
         unsigned int, signed int>::type;
 
     using  enum_type = Enum;

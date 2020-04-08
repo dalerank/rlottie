@@ -17,7 +17,6 @@
  */
 
 #include "vpathmesure.h"
-#include <limits>
 #include "vbezier.h"
 #include "vdasher.h"
 
@@ -43,7 +42,7 @@ VPath VPathMesure::trim(const VPath &path)
         float array[4] = {
             0.0f, length * mStart,  // 1st segment
             (mEnd - mStart) * length,
-            std::numeric_limits<float>::max(),  // 2nd segment
+            rlottie_std::numeric_limits<float>::max(),  // 2nd segment
         };
         VDasher dasher(array, 4);
         dasher.dashed(path, mScratchObject);
@@ -52,7 +51,7 @@ VPath VPathMesure::trim(const VPath &path)
         float array[4] = {
             length * mEnd, (mStart - mEnd) * length,  // 1st segment
             (1 - mStart) * length,
-            std::numeric_limits<float>::max(),  // 2nd segment
+            rlottie_std::numeric_limits<float>::max(),  // 2nd segment
         };
         VDasher dasher(array, 4);
         dasher.dashed(path, mScratchObject);

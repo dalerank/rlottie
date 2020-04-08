@@ -17,8 +17,6 @@
  */
 
 #include "vbitmap.h"
-#include <string>
-#include <memory>
 #include "vdrawhelper.h"
 #include "vglobal.h"
 
@@ -34,7 +32,7 @@ void VBitmap::Impl::reset(size_t width, size_t height, VBitmap::Format format)
     mDepth = depth(format);
     mStride = ((mWidth * mDepth + 31) >> 5)
                   << 2;  // bytes per scanline (must be multiple of 4)
-    mOwnData = std::make_unique<uchar[]>(mStride * mHeight);
+    mOwnData = rlottie_std::make_unique<uchar[]>(mStride * mHeight);
 }
 
 void VBitmap::Impl::reset(uchar *data, size_t width, size_t height, size_t bytesPerLine,
@@ -105,7 +103,11 @@ VBitmap::VBitmap(size_t width, size_t height, VBitmap::Format format)
 {
     if (width <= 0 || height <= 0 || format == Format::Invalid) return;
 
+#ifdef LOTTIE_DEFAULT_ALLOCATOR
+    mImpl = rlottie_std::make_shared<Impl>(width, height, format);
+#else
     mImpl = rc_ptr<Impl>(width, height, format);
+#endif
 }
 
 VBitmap::VBitmap(uchar *data, size_t width, size_t height, size_t bytesPerLine,
@@ -115,7 +117,11 @@ VBitmap::VBitmap(uchar *data, size_t width, size_t height, size_t bytesPerLine,
         format == Format::Invalid)
         return;
 
+#ifdef LOTTIE_DEFAULT_ALLOCATOR
+    mImpl = rlottie_std::make_shared<Impl>(data, width, height, bytesPerLine, format);
+#else
     mImpl = rc_ptr<Impl>(data, width, height, bytesPerLine, format);
+#endif
 }
 
 void VBitmap::reset(uchar *data, size_t w, size_t h, size_t bytesPerLine,
@@ -124,7 +130,11 @@ void VBitmap::reset(uchar *data, size_t w, size_t h, size_t bytesPerLine,
     if (mImpl) {
         mImpl->reset(data, w, h, bytesPerLine, format);
     } else {
+#ifdef LOTTIE_DEFAULT_ALLOCATOR
+        mImpl = rlottie_std::make_shared<Impl>(data, w, h, bytesPerLine, format);
+#else
         mImpl = rc_ptr<Impl>(data, w, h, bytesPerLine, format);
+#endif
     }
 }
 
@@ -137,7 +147,11 @@ void VBitmap::reset(size_t w, size_t h, VBitmap::Format format)
         }
         mImpl->reset(w, h, format);
     } else {
+#ifdef LOTTIE_DEFAULT_ALLOCATOR
+        mImpl = rlottie_std::make_shared<Impl>(w, h, format);
+#else
         mImpl = rc_ptr<Impl>(w, h, format);
+#endif
     }
 }
 
@@ -183,7 +197,11 @@ VSize VBitmap::size() const
 
 bool VBitmap::valid() const
 {
+#ifdef LOTTIE_DEFAULT_ALLOCATOR
+    return (bool)mImpl;
+#else
     return mImpl;
+#endif
 }
 
 VBitmap::Format VBitmap::format() const

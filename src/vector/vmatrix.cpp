@@ -245,8 +245,8 @@ VMatrix &VMatrix::rotate(float a, Axis axis)
         cosa = -1.;
     else {
         float b = deg2rad * a;  // convert to radians
-        sina = std::sin(b);     // fast and convenient
-        cosa = std::cos(b);
+        sina = rlottie_std::sin(b);     // fast and convenient
+        cosa = rlottie_std::cos(b);
     }
 
     if (axis == Axis::Z) {
@@ -593,13 +593,13 @@ VRect VMatrix::map(const VRect &rect) const
 {
     VMatrix::MatrixType t = type();
     if (t <= MatrixType::Translate)
-        return rect.translated(std::lround(mtx), std::lround(mty));
+        return rect.translated(rlottie_std::lround(mtx), rlottie_std::lround(mty));
 
     if (t <= MatrixType::Scale) {
-        int x = std::lround(m11 * rect.x() + mtx);
-        int y = std::lround(m22 * rect.y() + mty);
-        int w = std::lround(m11 * rect.width());
-        int h = std::lround(m22 * rect.height());
+        int x = rlottie_std::lround(m11 * rect.x() + mtx);
+        int y = rlottie_std::lround(m22 * rect.y() + mty);
+        int w = rlottie_std::lround(m11 * rect.width());
+        int h = rlottie_std::lround(m22 * rect.height());
         if (w < 0) {
             w = -w;
             x -= w;
@@ -632,9 +632,9 @@ VRect VMatrix::map(const VRect &rect) const
         ymin = vMin(ymin, y);
         xmax = vMax(xmax, x);
         ymax = vMax(ymax, y);
-        return VRect(std::lround(xmin), std::lround(ymin),
-                     std::lround(xmax) - std::lround(xmin),
-                     std::lround(ymax) - std::lround(ymin));
+        return VRect(rlottie_std::lround(xmin), rlottie_std::lround(ymin),
+                     rlottie_std::lround(xmax) - rlottie_std::lround(xmin),
+                     rlottie_std::lround(ymax) - rlottie_std::lround(ymin));
     } else {
         // Not supported
         assert(0);

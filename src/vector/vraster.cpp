@@ -19,7 +19,6 @@
 #include "vraster.h"
 #include <climits>
 #include <cstring>
-#include <memory>
 #include "config.h"
 #include "v_ft_raster.h"
 #include "v_ft_stroker.h"
@@ -34,21 +33,21 @@ template <typename T>
 class dyn_array {
 public:
     explicit dyn_array(size_t size)
-        : mCapacity(size), mData(std::make_unique<T[]>(mCapacity))
+        : mCapacity(size), mData(rlottie_std::make_unique<T[]>(mCapacity))
     {
     }
     void reserve(size_t size)
     {
         if (mCapacity > size) return;
         mCapacity = size;
-        mData = std::make_unique<T[]>(mCapacity);
+        mData = rlottie_std::make_unique<T[]>(mCapacity);
     }
     T *        data() const { return mData.get(); }
     dyn_array &operator=(dyn_array &&) noexcept = delete;
 
 private:
     size_t               mCapacity{0};
-    std::unique_ptr<T[]> mData{nullptr};
+    rlottie_std::unique_ptr<T[]> mData{nullptr};
 };
 
 struct FTOutline {
@@ -101,8 +100,8 @@ void FTOutline::grow(size_t points, size_t segments)
 
 void FTOutline::convert(const VPath &path)
 {
-    const std::vector<VPath::Element> &elements = path.elements();
-    const std::vector<VPointF> &       points = path.points();
+    const rlottie_std::vector<VPath::Element> &elements = path.elements();
+    const rlottie_std::vector<VPointF> &       points = path.points();
 
     grow(points.size(), path.segments());
 
@@ -270,7 +269,7 @@ public:
     void  notify()
     {
         {
-            std::lock_guard<std::mutex> lock(_mutex);
+            rlottie_std::lock_guard<rlottie_std::mutex> lock(_mutex);
             _ready = true;
         }
         _cv.notify_one();
@@ -280,7 +279,7 @@ public:
         if (!_pending) return;
 
         {
-            std::unique_lock<std::mutex> lock(_mutex);
+            rlottie_std::unique_lock<rlottie_std::mutex> lock(_mutex);
             while (!_ready) _cv.wait(lock);
         }
 
@@ -302,8 +301,8 @@ public:
 
 private:
     VRle                    _rle;
-    std::mutex              _mutex;
-    std::condition_variable _cv;
+    rlottie_std::mutex              _mutex;
+    rlottie_std::condition_variable _cv;
     bool                    _ready{true};
     bool                    _pending{false};
 };
@@ -324,7 +323,7 @@ struct VRleTask {
     void update(VPath path, FillRule fillRule, const VRect &clip)
     {
         mRle.reset();
-        mPath = std::move(path);
+        mPath = rlottie_std::move(path);
         mFillRule = fillRule;
         mClip = clip;
         mGenerateStroke = false;
@@ -334,7 +333,7 @@ struct VRleTask {
                 float miterLimit, const VRect &clip)
     {
         mRle.reset();
-        mPath = std::move(path);
+        mPath = rlottie_std::move(path);
         mCap = cap;
         mJoin = join;
         mStrokeWidth = width;
@@ -410,7 +409,7 @@ struct VRleTask {
     }
 };
 
-using VTask = std::shared_ptr<VRleTask>;
+using VTask = rlottie_std::shared_ptr<VRleTask>;
 
 #ifdef LOTTIE_THREAD_SUPPORT
 
@@ -418,10 +417,10 @@ using VTask = std::shared_ptr<VRleTask>;
 #include "vtaskqueue.h"
 
 class RleTaskScheduler {
-    const unsigned                _count{std::thread::hardware_concurrency()};
-    std::vector<std::thread>      _threads;
-    std::vector<TaskQueue<VTask>> _q{_count};
-    std::atomic<unsigned>         _index{0};
+    const unsigned                _count{rlottie_std::thread::hardware_concurrency()};
+    rlottie_std::vector<rlottie_std::thread>      _threads;
+    rlottie_std::vector<TaskQueue<VTask>> _q{_count};
+    rlottie_std::atomic<unsigned>         _index{0};
 
     void run(unsigned i)
     {
@@ -479,11 +478,11 @@ public:
         auto i = _index++;
 
         for (unsigned n = 0; n != _count; ++n) {
-            if (_q[(i + n) % _count].try_push(std::move(task))) return;
+            if (_q[(i + n) % _count].try_push(rlottie_std::move(task))) return;
         }
 
         if (_count > 0) {
-            _q[i % _count].push(std::move(task));
+            _q[i % _count].push(rlottie_std::move(task));
         }
     }
 };
@@ -525,13 +524,13 @@ VRle VRasterizer::rle()
 
 void VRasterizer::init()
 {
-    if (!d) d = std::make_shared<VRasterizerImpl>();
+    if (!d) d = rlottie_std::make_shared<VRasterizerImpl>();
 }
 
 void VRasterizer::updateRequest()
 {
     VTask taskObj = VTask(d, &d->task());
-    RleTaskScheduler::instance().process(std::move(taskObj));
+    RleTaskScheduler::instance().process(rlottie_std::move(taskObj));
 }
 
 void VRasterizer::rasterize(VPath path, FillRule fillRule, const VRect &clip)
@@ -541,7 +540,7 @@ void VRasterizer::rasterize(VPath path, FillRule fillRule, const VRect &clip)
         d->rle().reset();
         return;
     }
-    d->task().update(std::move(path), fillRule, clip);
+    d->task().update(rlottie_std::move(path), fillRule, clip);
     updateRequest();
 }
 
@@ -553,7 +552,7 @@ void VRasterizer::rasterize(VPath path, CapStyle cap, JoinStyle join,
         d->rle().reset();
         return;
     }
-    d->task().update(std::move(path), cap, join, width, miterLimit, clip);
+    d->task().update(rlottie_std::move(path), cap, join, width, miterLimit, clip);
     updateRequest();
 }
 

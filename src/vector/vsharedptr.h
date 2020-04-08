@@ -2,8 +2,6 @@
 #define VSHAREDPTR_H
 
 #include <cassert>
-#include <memory>
-#include <atomic>
 
 template <typename T, typename Rc>
 class vshared_ptr {
@@ -13,7 +11,7 @@ class vshared_ptr {
         model() = default;
 
         template <class... Args>
-        explicit model(Args&&... args) : mValue(std::forward<Args>(args)...){}
+        explicit model(Args&&... args) : mValue(rlottie_std::forward<Args>(args)...){}
         explicit model(const T& other) : mValue(other){}
 
         T mValue;
@@ -31,7 +29,7 @@ public:
     }
 
     template <class... Args>
-    explicit vshared_ptr(Args&&... args) : mModel(new model(std::forward<Args>(args)...))
+    explicit vshared_ptr(Args&&... args) : mModel(new model(rlottie_std::forward<Args>(args)...))
     {
     }
 
@@ -75,7 +73,7 @@ public:
 
     auto operator-> () const noexcept -> element_type* { return &read(); }
 
-    std::size_t refCount() const noexcept
+    rlottie_std::size_t refCount() const noexcept
     {
         assert(mModel);
 
@@ -114,10 +112,10 @@ private:
 
 // atomic ref counted pointer implementation.
 template < typename T>
-using arc_ptr = vshared_ptr<T, std::atomic<std::size_t>>;
+using arc_ptr = vshared_ptr<T, rlottie_std::atomic<rlottie_std::size_t>>;
 
 // ref counter pointer implementation.
 template < typename T>
-using rc_ptr = vshared_ptr<T, std::size_t>;
+using rc_ptr = vshared_ptr<T, rlottie_std::size_t>;
 
 #endif // VSHAREDPTR_H

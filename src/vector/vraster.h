@@ -18,7 +18,7 @@
 
 #ifndef VRASTER_H
 #define VRASTER_H
-#include <future>
+
 #include "vglobal.h"
 #include "vrect.h"
 
@@ -38,7 +38,7 @@ private:
     struct VRasterizerImpl;
     void init();
     void updateRequest();
-    std::shared_ptr<VRasterizerImpl> d{nullptr};
+    rlottie_std::shared_ptr<VRasterizerImpl> d{nullptr};
 };
 
 V_END_NAMESPACE

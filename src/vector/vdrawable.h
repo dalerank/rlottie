@@ -18,7 +18,7 @@
 
 #ifndef VDRAWABLE_H
 #define VDRAWABLE_H
-#include <future>
+
 #include <cstring>
 #include "vbrush.h"
 #include "vpath.h"
@@ -51,7 +51,7 @@ public:
     void setBrush(const VBrush &brush) { mBrush = brush; }
     void setStrokeInfo(CapStyle cap, JoinStyle join, float miterLimit,
                        float strokeWidth);
-    void setDashInfo(std::vector<float> &dashInfo);
+    void setDashInfo(rlottie_std::vector<float> &dashInfo);
     void preprocess(const VRect &clip);
     void applyDashOp();
     VRle rle();
@@ -70,7 +70,7 @@ public:
     };
 
     struct StrokeWithDashInfo : public StrokeInfo{
-        std::vector<float> mDash;
+        rlottie_std::vector<float> mDash;
     };
 
 public:

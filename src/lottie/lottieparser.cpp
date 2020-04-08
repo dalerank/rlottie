@@ -51,8 +51,6 @@
 // This parser uses in-situ strings, so the JSON buffer will be altered during
 // the parse.
 
-#include <array>
-
 #include "lottiemodel.h"
 #include "rapidjson/document.h"
 
@@ -201,7 +199,7 @@ public:
     MatteType             getMatteType();
     LayerType             getLayerType();
 
-    std::shared_ptr<LOTCompositionData> composition() const
+    rlottie_std::shared_ptr<LOTCompositionData> composition() const
     {
         return mComposition;
     }
@@ -241,7 +239,7 @@ public:
     void getValue(int &ival);
     void getValue(LottieShapeData &shape);
     void getValue(LottieGradient &gradient);
-    void getValue(std::vector<VPointF> &v);
+    void getValue(rlottie_std::vector<VPointF> &v);
     void getValue(LOTRepeaterTransform &);
 
     template <typename T>
@@ -257,23 +255,23 @@ public:
     void parseShapeProperty(LOTAnimatable<LottieShapeData> &obj);
     void parseDashProperty(LOTDashProperty &dash);
 
-    VInterpolator* interpolator(VPointF, VPointF, std::string);
+    VInterpolator* interpolator(VPointF, VPointF, rlottie_std::string);
 
     LottieColor toColor(const char *str);
 
     void resolveLayerRefs();
 
 protected:
-    std::unordered_map<std::string, VInterpolator*>
+    rlottie_std::unordered_map<rlottie_std::string, VInterpolator*>
                                                mInterpolatorCache;
-    std::shared_ptr<LOTCompositionData>        mComposition;
+    rlottie_std::shared_ptr<LOTCompositionData>        mComposition;
     LOTCompositionData *                       compRef{nullptr};
     LOTLayerData *                             curLayerRef{nullptr};
-    std::vector<LOTLayerData *>                mLayersToUpdate;
-    std::string                                mDirPath;
-    std::vector<VPointF>                       mInPoint;  /* "i" */
-    std::vector<VPointF>                       mOutPoint; /* "o" */
-    std::vector<VPointF>                       mVertices;
+    rlottie_std::vector<LOTLayerData *>                mLayersToUpdate;
+    rlottie_std::string                                mDirPath;
+    rlottie_std::vector<VPointF>                       mInPoint;  /* "i" */
+    rlottie_std::vector<VPointF>                       mOutPoint; /* "o" */
+    rlottie_std::vector<VPointF>                       mVertices;
     void                                       SkipOut(int depth);
 };
 
@@ -558,14 +556,14 @@ void LottieParserImpl::parseComposition()
 {
     RAPIDJSON_ASSERT(PeekType() == kObjectType);
     EnterObject();
-    std::shared_ptr<LOTCompositionData> sharedComposition =
-        std::make_shared<LOTCompositionData>();
+    rlottie_std::shared_ptr<LOTCompositionData> sharedComposition =
+        rlottie_std::make_shared<LOTCompositionData>();
     LOTCompositionData *comp = sharedComposition.get();
     compRef = comp;
     while (const char *key = NextObjectKey()) {
         if (0 == strcmp(key, "v")) {
             RAPIDJSON_ASSERT(PeekType() == kStringType);
-            comp->mVersion = std::string(GetString());
+            comp->mVersion = rlottie_std::string(GetString());
         } else if (0 == strcmp(key, "w")) {
             RAPIDJSON_ASSERT(PeekType() == kNumberType);
             comp->mSize.setWidth(GetInt());
@@ -615,13 +613,13 @@ void LottieParserImpl::parseMarker()
 {
     RAPIDJSON_ASSERT(PeekType() == kObjectType);
     EnterObject();
-    std::string comment;
+    rlottie_std::string comment;
     int         timeframe{0};
     int          duration{0};
     while (const char *key = NextObjectKey()) {
         if (0 == strcmp(key, "cm")) {
             RAPIDJSON_ASSERT(PeekType() == kStringType);
-            comment = std::string(GetString());
+            comment = rlottie_std::string(GetString());
         } else if (0 == strcmp(key, "tm")) {
             RAPIDJSON_ASSERT(PeekType() == kNumberType);
             timeframe = GetDouble();
@@ -636,7 +634,7 @@ void LottieParserImpl::parseMarker()
             Skip(key);
         }
     }
-    compRef->mMarkers.emplace_back(std::move(comment), timeframe, timeframe + duration);
+    compRef->mMarkers.emplace_back(rlottie_std::move(comment), timeframe, timeframe + duration);
 }
 
 void LottieParserImpl::parseMarkers()
@@ -669,12 +667,12 @@ static constexpr const unsigned char B64index[256] = {
     25, 0,  0,  0,  0,  63, 0,  26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36,
     37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51};
 
-std::string b64decode(const char *data, const size_t len)
+rlottie_std::string b64decode(const char *data, const size_t len)
 {
     auto p = reinterpret_cast<const unsigned char *>(data);
     int            pad = len > 0 && (len % 4 || p[len - 1] == '=');
     const size_t   L = ((len + 3) / 4 - pad) * 4;
-    std::string    str(L / 4 * 3 + pad, '\0');
+    rlottie_std::string    str(L / 4 * 3 + pad, '\0');
 
     for (size_t i = 0, j = 0; i < L; i += 4) {
         int n = B64index[p[i]] << 18 | B64index[p[i + 1]] << 12 |
@@ -695,7 +693,7 @@ std::string b64decode(const char *data, const size_t len)
     return str;
 }
 
-static std::string convertFromBase64(const std::string &str)
+static rlottie_std::string convertFromBase64(const rlottie_std::string &str)
 {
     // usual header look like "data:image/png;base64,"
     // so need to skip till ','.
@@ -709,16 +707,24 @@ static std::string convertFromBase64(const std::string &str)
 }
 
 /*
- *  std::to_string() function is missing in VS2017
+ *  rlottie_std::to_string() function is missing in VS2017
  *  so this is workaround for windows build
  */
+
+#ifdef LOTTIE_STLBASE_HAVE_TOSTRING
+template<class T>
+static rlottie_std::string toString(const T &value) {
+   return rlottie_std::to_string(value);
+}
+#else
 #include <sstream>
 template<class T>
-static std::string toString(const T &value) {
-    std::ostringstream os;
+static rlottie_std::string toString(const T &value) {
+    rlottie_std::ostringstream os;
     os << value;
     return os.str();
 }
+#endif
 
 /*
  * https://github.com/airbnb/lottie-web/blob/master/docs/json/layers/shape.json
@@ -729,8 +735,8 @@ LOTAsset* LottieParserImpl::parseAsset()
     RAPIDJSON_ASSERT(PeekType() == kObjectType);
 
     auto                      asset = allocator().make<LOTAsset>();
-    std::string               filename;
-    std::string               relativePath;
+    rlottie_std::string               filename;
+    rlottie_std::string               relativePath;
     bool                      embededResource = false;
     EnterObject();
     while (const char *key = NextObjectKey()) {
@@ -743,15 +749,15 @@ LOTAsset* LottieParserImpl::parseAsset()
         } else if (0 == strcmp(key, "p")) { /* image name */
             asset->mAssetType = LOTAsset::Type::Image;
             RAPIDJSON_ASSERT(PeekType() == kStringType);
-            filename = std::string(GetString());
+            filename = rlottie_std::string(GetString());
         } else if (0 == strcmp(key, "u")) { /* relative image path */
             RAPIDJSON_ASSERT(PeekType() == kStringType);
-            relativePath = std::string(GetString());
+            relativePath = rlottie_std::string(GetString());
         } else if (0 == strcmp(key, "e")) { /* relative image path */
             embededResource = GetInt();
         } else if (0 == strcmp(key, "id")) { /* reference id*/
             if (PeekType() == kStringType) {
-                asset->mRefId = std::string(GetString());
+                asset->mRefId = rlottie_std::string(GetString());
             } else {
                 RAPIDJSON_ASSERT(PeekType() == kNumberType);
                 asset->mRefId = toString(GetInt());
@@ -821,15 +827,15 @@ LottieColor LottieParserImpl::toColor(const char *str)
     char tmp[3] = {'\0', '\0', '\0'};
     tmp[0] = str[1];
     tmp[1] = str[2];
-    color.r = std::strtol(tmp, nullptr, 16) / 255.0f;
+    color.r = rlottie_std::strtol(tmp, nullptr, 16) / 255.0f;
 
     tmp[0] = str[3];
     tmp[1] = str[4];
-    color.g = std::strtol(tmp, nullptr, 16) / 255.0f;
+    color.g = rlottie_std::strtol(tmp, nullptr, 16) / 255.0f;
 
     tmp[0] = str[5];
     tmp[1] = str[6];
-    color.b = std::strtol(tmp, nullptr, 16) / 255.0f;
+    color.b = rlottie_std::strtol(tmp, nullptr, 16) / 255.0f;
 
     return color;
 }
@@ -915,7 +921,7 @@ LOTLayerData* LottieParserImpl::parseLayer()
             layer->mParentId = GetInt();
         } else if (0 == strcmp(key, "refId")) { /*preComp Layer reference id*/
             RAPIDJSON_ASSERT(PeekType() == kStringType);
-            layer->extra()->mPreCompRefId = std::string(GetString());
+            layer->extra()->mPreCompRefId = rlottie_std::string(GetString());
             layer->mHasGradient = true;
             mLayersToUpdate.push_back(layer);
         } else if (0 == strcmp(key, "sr")) {  // "Layer Time Stretching"
@@ -925,10 +931,10 @@ LOTLayerData* LottieParserImpl::parseLayer()
             parseProperty(layer->extra()->mTimeRemap);
         } else if (0 == strcmp(key, "ip")) {
             RAPIDJSON_ASSERT(PeekType() == kNumberType);
-            layer->mInFrame = std::lround(GetDouble());
+            layer->mInFrame = rlottie_std::lround(GetDouble());
         } else if (0 == strcmp(key, "op")) {
             RAPIDJSON_ASSERT(PeekType() == kNumberType);
-            layer->mOutFrame = std::lround(GetDouble());
+            layer->mOutFrame = rlottie_std::lround(GetDouble());
         } else if (0 == strcmp(key, "st")) {
             RAPIDJSON_ASSERT(PeekType() == kNumberType);
             layer->mStartFrame = GetDouble();
@@ -1414,8 +1420,8 @@ LOTTransformData* LottieParserImpl::parseTransformObject(
 {
     auto objT = allocator().make<LOTTransformData>();
 
-    std::shared_ptr<LOTTransformData> sharedTransform =
-        std::make_shared<LOTTransformData>();
+    rlottie_std::shared_ptr<LOTTransformData> sharedTransform =
+        rlottie_std::make_shared<LOTTransformData>();
 
     auto obj = allocator().make<TransformData>();
     if (ddd) {
@@ -1716,7 +1722,7 @@ LOTGStrokeData* LottieParserImpl::parseGStrokeObject()
     return obj;
 }
 
-void LottieParserImpl::getValue(std::vector<VPointF> &v)
+void LottieParserImpl::getValue(rlottie_std::vector<VPointF> &v)
 {
     RAPIDJSON_ASSERT(PeekType() == kArrayType);
     EnterArray();
@@ -1807,7 +1813,7 @@ void LottieParserImpl::getValue(LottieShapeData &obj)
     mInPoint.clear();
     mOutPoint.clear();
     mVertices.clear();
-    std::vector<VPointF> points;
+    rlottie_std::vector<VPointF> points;
     bool                 closed = false;
 
     /*
@@ -1848,7 +1854,7 @@ void LottieParserImpl::getValue(LottieShapeData &obj)
     if (mInPoint.size() != mOutPoint.size() ||
         mInPoint.size() != mVertices.size()) {
         vCritical << "The Shape data are corrupted";
-        points = std::vector<VPointF>();
+        points = rlottie_std::vector<VPointF>();
     } else {
         auto size = mVertices.size();
         points.reserve(3 * size + 4);
@@ -1869,7 +1875,7 @@ void LottieParserImpl::getValue(LottieShapeData &obj)
             points.push_back(mVertices[0]);  // end point
         }
     }
-    obj.mPoints = std::move(points);
+    obj.mPoints = rlottie_std::move(points);
     obj.mClosed = closed;
 }
 
@@ -1912,10 +1918,10 @@ bool LottieParserImpl::parseKeyFrameValue(const char *               key,
 }
 
 VInterpolator* LottieParserImpl::interpolator(
-    VPointF inTangent, VPointF outTangent, std::string key)
+    VPointF inTangent, VPointF outTangent, rlottie_std::string key)
 {
     if (key.empty()) {
-        std::array<char, 20> temp;
+        rlottie_std::array<char, 20> temp;
         snprintf(temp.data(), temp.size(), "%.2f_%.2f_%.2f_%.2f", inTangent.x(),
                  inTangent.y(), outTangent.x(), outTangent.y());
         key = temp.data();
@@ -1928,7 +1934,7 @@ VInterpolator* LottieParserImpl::interpolator(
     }
 
     auto obj = allocator().make<VInterpolator>(outTangent, inTangent);
-    mInterpolatorCache[std::move(key)] = obj;
+    mInterpolatorCache[rlottie_std::move(key)] = obj;
     return obj;
 }
 
@@ -1939,7 +1945,7 @@ template <typename T>
 void LottieParserImpl::parseKeyFrame(LOTAnimInfo<T> &obj)
 {
     struct ParsedField {
-        std::string interpolatorKey;
+        rlottie_std::string interpolatorKey;
         bool        interpolator{false};
         bool        value{false};
         bool        hold{false};
@@ -2011,11 +2017,11 @@ void LottieParserImpl::parseKeyFrame(LOTAnimInfo<T> &obj)
     if (parsed.hold) {
         keyframe.mValue.mEndValue = keyframe.mValue.mStartValue;
         keyframe.mEndFrame = keyframe.mStartFrame;
-        obj.mKeyFrames.push_back(std::move(keyframe));
+        obj.mKeyFrames.push_back(rlottie_std::move(keyframe));
     } else if (parsed.interpolator) {
         keyframe.mInterpolator = interpolator(
-            inTangent, outTangent, std::move(parsed.interpolatorKey));
-        obj.mKeyFrames.push_back(std::move(keyframe));
+            inTangent, outTangent, rlottie_std::move(parsed.interpolatorKey));
+        obj.mKeyFrames.push_back(rlottie_std::move(keyframe));
     } else {
         // its the last frame discard.
     }
@@ -2116,7 +2122,7 @@ void LottieParserImpl::parseProperty(LOTAnimatable<T> &obj)
 
 class LOTDataInspector {
 public:
-    void visit(LOTCompositionData *obj, std::string level)
+    void visit(LOTCompositionData *obj, rlottie_std::string level)
     {
         vDebug << " { " << level << "Composition:: a: " << !obj->isStatic()
                << ", v: " << obj->mVersion << ", stFm: " << obj->startFrame()
@@ -2128,7 +2134,7 @@ public:
         level.erase(level.end() - 1, level.end());
         vDebug << " } " << level << "Composition End\n";
     }
-    void visit(LOTLayerData *obj, std::string level)
+    void visit(LOTLayerData *obj, rlottie_std::string level)
     {
         vDebug << level << "{ " << layerType(obj->mLayerType)
                << ", name: " << obj->name() << ", id:" << obj->mId
@@ -2153,14 +2159,14 @@ public:
         vDebug << level << "} " << layerType(obj->mLayerType).c_str()
                << ", id: " << obj->mId << "\n";
     }
-    void visitChildren(LOTGroupData *obj, std::string level)
+    void visitChildren(LOTGroupData *obj, rlottie_std::string level)
     {
         level.append("\t");
         for (const auto &child : obj->mChildren) visit(child, level);
         if (obj->mTransform) visit(obj->mTransform, level);
     }
 
-    void visit(LOTData *obj, std::string level)
+    void visit(LOTData *obj, rlottie_std::string level)
     {
         switch (obj->type()) {
         case LOTData::Type::Repeater: {
@@ -2242,7 +2248,7 @@ public:
         }
     }
 
-    std::string matteType(MatteType type)
+    rlottie_std::string matteType(MatteType type)
     {
         switch (type) {
         case MatteType::None:
@@ -2265,7 +2271,7 @@ public:
             break;
         }
     }
-    std::string layerType(LayerType type)
+    rlottie_std::string layerType(LayerType type)
     {
         switch (type) {
         case LayerType::Precomp:
@@ -2297,7 +2303,7 @@ public:
 
 LottieParser::~LottieParser() = default;
 LottieParser::LottieParser(char *str, const char *dir_path)
-    : d(std::make_unique<LottieParserImpl>(str, dir_path))
+    : d(rlottie_std::make_unique<LottieParserImpl>(str, dir_path))
 {
     if (d->VerifyType())
         d->parseComposition();
@@ -2305,11 +2311,11 @@ LottieParser::LottieParser(char *str, const char *dir_path)
         vWarning << "Input data is not Lottie format!";
 }
 
-std::shared_ptr<LOTModel> LottieParser::model()
+rlottie_std::shared_ptr<LOTModel> LottieParser::model()
 {
     if (!d->composition()) return nullptr;
 
-    std::shared_ptr<LOTModel> model = std::make_shared<LOTModel>();
+    rlottie_std::shared_ptr<LOTModel> model = rlottie_std::make_shared<LOTModel>();
     model->mRoot = d->composition();
     model->mRoot->processRepeaterObjects();
     model->mRoot->updateStats();

@@ -48,16 +48,19 @@ public:
     uchar *         data() const;
     VRect           rect() const;
     VSize           size() const;
+    bool    isNeedClear() const { return mImpl ? mImpl->mNeedClear : true; }
+    void    setNeedClear(bool needClear) { if (mImpl) mImpl->mNeedClear = needClear; }
     void    fill(uint pixel);
     void    updateLuma();
 private:
     struct Impl {
-        std::unique_ptr<uchar[]> mOwnData{nullptr};
+        rlottie_std::unique_ptr<uchar[]> mOwnData{nullptr};
         uchar *         mRoData{nullptr};
         uint            mWidth{0};
         uint            mHeight{0};
         uint            mStride{0};
         uchar           mDepth{0};
+        bool            mNeedClear{true};
         VBitmap::Format mFormat{VBitmap::Format::Invalid};
 
         explicit Impl(size_t width, size_t height, VBitmap::Format format)
@@ -81,8 +84,11 @@ private:
         void fill(uint);
         void updateLuma();
     };
-
+#ifdef LOTTIE_DEFAULT_ALLOCATOR
+    rlottie_std::shared_ptr<Impl> mImpl;
+#else
     rc_ptr<Impl> mImpl;
+#endif
 };
 
 V_END_NAMESPACE

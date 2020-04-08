@@ -20,37 +20,26 @@
 
 #ifdef LOTTIE_LOGGING_SUPPORT
 
-#include <atomic>
-#include <chrono>
-#include <cstring>
-#include <ctime>
-#include <fstream>
-#include <memory>
-#include <queue>
-#include <sstream>
-#include <thread>
-#include <tuple>
-
 namespace {
 
 /* Returns microseconds since epoch */
 uint64_t timestamp_now()
 {
-    return std::chrono::duration_cast<std::chrono::microseconds>(
-               std::chrono::high_resolution_clock::now().time_since_epoch())
+    return rlottie_std::chrono::duration_cast<rlottie_std::chrono::microseconds>(
+               rlottie_std::chrono::high_resolution_clock::now().time_since_epoch())
         .count();
 }
 
 /* I want [2016-10-13 00:01:23.528514] */
-void format_timestamp(std::ostream& os, uint64_t timestamp)
+void format_timestamp(rlottie_std::ostream& os, uint64_t timestamp)
 {
     // The next 3 lines do not work on MSVC!
-    // auto duration = std::chrono::microseconds(timestamp);
-    // std::chrono::high_resolution_clock::time_point time_point(duration);
-    // std::time_t time_t =
-    // std::chrono::high_resolution_clock::to_time_t(time_point);
-    std::time_t time_t = timestamp / 1000000;
-    auto        gmtime = std::gmtime(&time_t);
+    // auto duration = rlottie_std::chrono::microseconds(timestamp);
+    // rlottie_std::chrono::high_resolution_clock::time_point time_point(duration);
+    // rlottie_std::time_t time_t =
+    // rlottie_std::chrono::high_resolution_clock::to_time_t(time_point);
+    rlottie_std::time_t time_t = timestamp / 1000000;
+    auto        gmtime = rlottie_std::gmtime(&time_t);
     char        buffer[32];
     strftime(buffer, 32, "%Y-%m-%d %T.", gmtime);
     char microseconds[7];
@@ -59,9 +48,9 @@ void format_timestamp(std::ostream& os, uint64_t timestamp)
     os << '[' << buffer << microseconds << ']';
 }
 
-std::thread::id this_thread_id()
+rlottie_std::thread::id this_thread_id()
 {
-    static thread_local const std::thread::id id = std::this_thread::get_id();
+    static thread_local const rlottie_std::thread::id id = rlottie_std::this_thread::get_id();
     return id;
 }
 
@@ -69,19 +58,19 @@ template <typename T, typename Tuple>
 struct TupleIndex;
 
 template <typename T, typename... Types>
-struct TupleIndex<T, std::tuple<T, Types...> > {
-    static constexpr const std::size_t value = 0;
+struct TupleIndex<T, rlottie_std::tuple<T, Types...> > {
+    static constexpr const rlottie_std::size_t value = 0;
 };
 
 template <typename T, typename U, typename... Types>
-struct TupleIndex<T, std::tuple<U, Types...> > {
-    static constexpr const std::size_t value =
-        1 + TupleIndex<T, std::tuple<Types...> >::value;
+struct TupleIndex<T, rlottie_std::tuple<U, Types...> > {
+    static constexpr const rlottie_std::size_t value =
+        1 + TupleIndex<T, rlottie_std::tuple<Types...> >::value;
 };
 
 }  // anonymous namespace
 
-typedef std::tuple<char, uint32_t, uint64_t, int32_t, int64_t, double,
+typedef rlottie_std::tuple<char, uint32_t, uint64_t, int32_t, int64_t, double,
                    VDebug::string_literal_t, char*>
     SupportedTypes;
 
@@ -120,7 +109,7 @@ VDebug::VDebug(LogLevel level, char const* file, char const* function,
     : m_bytes_used(0), m_buffer_size(sizeof(m_stack_buffer))
 {
     encode<uint64_t>(timestamp_now());
-    encode<std::thread::id>(this_thread_id());
+    encode<rlottie_std::thread::id>(this_thread_id());
     encode<string_literal_t>(string_literal_t(file));
     encode<string_literal_t>(string_literal_t(function));
     encode<uint32_t>(line);
@@ -134,14 +123,14 @@ VDebug::VDebug(LogLevel level, char const* file, char const* function,
 
 VDebug::~VDebug() = default;
 
-void VDebug::stringify(std::ostream& os)
+void VDebug::stringify(rlottie_std::ostream& os)
 {
     char*             b = !m_heap_buffer ? m_stack_buffer : m_heap_buffer.get();
     char const* const end = b + m_bytes_used;
     uint64_t          timestamp = *reinterpret_cast<uint64_t*>(b);
     b += sizeof(uint64_t);
-    std::thread::id threadid = *reinterpret_cast<std::thread::id*>(b);
-    b += sizeof(std::thread::id);
+    rlottie_std::thread::id threadid = *reinterpret_cast<rlottie_std::thread::id*>(b);
+    b += sizeof(rlottie_std::thread::id);
     string_literal_t file = *reinterpret_cast<string_literal_t*>(b);
     b += sizeof(string_literal_t);
     string_literal_t function = *reinterpret_cast<string_literal_t*>(b);
@@ -158,13 +147,13 @@ void VDebug::stringify(std::ostream& os)
     }
 
     stringify(os, b, end);
-    os << std::endl;
+    os << rlottie_std::endl;
 
     if (loglevel >= LogLevel::CRIT) os.flush();
 }
 
 template <typename Arg>
-char* decode(std::ostream& os, char* b, Arg* /*dummy*/)
+char* decode(rlottie_std::ostream& os, char* b, Arg* /*dummy*/)
 {
     Arg arg = *reinterpret_cast<Arg*>(b);
     os << arg;
@@ -172,7 +161,7 @@ char* decode(std::ostream& os, char* b, Arg* /*dummy*/)
 }
 
 template <>
-char* decode(std::ostream& os, char* b, VDebug::string_literal_t* /*dummy*/)
+char* decode(rlottie_std::ostream& os, char* b, VDebug::string_literal_t* /*dummy*/)
 {
     VDebug::string_literal_t s =
         *reinterpret_cast<VDebug::string_literal_t*>(b);
@@ -181,7 +170,7 @@ char* decode(std::ostream& os, char* b, VDebug::string_literal_t* /*dummy*/)
 }
 
 template <>
-char* decode(std::ostream& os, char* b, char** /*dummy*/)
+char* decode(rlottie_std::ostream& os, char* b, char** /*dummy*/)
 {
     while (*b != '\0') {
         os << *b;
@@ -190,7 +179,7 @@ char* decode(std::ostream& os, char* b, char** /*dummy*/)
     return ++b;
 }
 
-void VDebug::stringify(std::ostream& os, char* start, char const* const end)
+void VDebug::stringify(rlottie_std::ostream& os, char* start, char const* const end)
 {
     if (start == end) return;
 
@@ -202,7 +191,7 @@ void VDebug::stringify(std::ostream& os, char* start, char const* const end)
         stringify(
             os,
             decode(os, start,
-                   static_cast<std::tuple_element<0, SupportedTypes>::type*>(
+                   static_cast<rlottie_std::tuple_element<0, SupportedTypes>::type*>(
                        nullptr)),
             end);
         return;
@@ -210,7 +199,7 @@ void VDebug::stringify(std::ostream& os, char* start, char const* const end)
         stringify(
             os,
             decode(os, start,
-                   static_cast<std::tuple_element<1, SupportedTypes>::type*>(
+                   static_cast<rlottie_std::tuple_element<1, SupportedTypes>::type*>(
                        nullptr)),
             end);
         return;
@@ -218,7 +207,7 @@ void VDebug::stringify(std::ostream& os, char* start, char const* const end)
         stringify(
             os,
             decode(os, start,
-                   static_cast<std::tuple_element<2, SupportedTypes>::type*>(
+                   static_cast<rlottie_std::tuple_element<2, SupportedTypes>::type*>(
                        nullptr)),
             end);
         return;
@@ -226,7 +215,7 @@ void VDebug::stringify(std::ostream& os, char* start, char const* const end)
         stringify(
             os,
             decode(os, start,
-                   static_cast<std::tuple_element<3, SupportedTypes>::type*>(
+                   static_cast<rlottie_std::tuple_element<3, SupportedTypes>::type*>(
                        nullptr)),
             end);
         return;
@@ -234,7 +223,7 @@ void VDebug::stringify(std::ostream& os, char* start, char const* const end)
         stringify(
             os,
             decode(os, start,
-                   static_cast<std::tuple_element<4, SupportedTypes>::type*>(
+                   static_cast<rlottie_std::tuple_element<4, SupportedTypes>::type*>(
                        nullptr)),
             end);
         return;
@@ -242,7 +231,7 @@ void VDebug::stringify(std::ostream& os, char* start, char const* const end)
         stringify(
             os,
             decode(os, start,
-                   static_cast<std::tuple_element<5, SupportedTypes>::type*>(
+                   static_cast<rlottie_std::tuple_element<5, SupportedTypes>::type*>(
                        nullptr)),
             end);
         return;
@@ -250,7 +239,7 @@ void VDebug::stringify(std::ostream& os, char* start, char const* const end)
         stringify(
             os,
             decode(os, start,
-                   static_cast<std::tuple_element<6, SupportedTypes>::type*>(
+                   static_cast<rlottie_std::tuple_element<6, SupportedTypes>::type*>(
                        nullptr)),
             end);
         return;
@@ -258,7 +247,7 @@ void VDebug::stringify(std::ostream& os, char* start, char const* const end)
         stringify(
             os,
             decode(os, start,
-                   static_cast<std::tuple_element<7, SupportedTypes>::type*>(
+                   static_cast<rlottie_std::tuple_element<7, SupportedTypes>::type*>(
                        nullptr)),
             end);
         return;
@@ -278,14 +267,14 @@ void VDebug::resize_buffer_if_needed(size_t additional_bytes)
     if (required_size <= m_buffer_size) return;
 
     if (!m_heap_buffer) {
-        m_buffer_size = std::max(static_cast<size_t>(512), required_size);
-        m_heap_buffer = std::make_unique<char[]>(m_buffer_size);
+        m_buffer_size = rlottie_std::max(static_cast<size_t>(512), required_size);
+        m_heap_buffer = rlottie_std::make_unique<char[]>(m_buffer_size);
         memcpy(m_heap_buffer.get(), m_stack_buffer, m_bytes_used);
         return;
     } else {
         m_buffer_size =
-            std::max(static_cast<size_t>(2 * m_buffer_size), required_size);
-        std::unique_ptr<char[]> new_heap_buffer(new char[m_buffer_size]);
+            rlottie_std::max(static_cast<size_t>(2 * m_buffer_size), required_size);
+        rlottie_std::unique_ptr<char[]> new_heap_buffer(new char[m_buffer_size]);
         memcpy(new_heap_buffer.get(), m_heap_buffer.get(), m_bytes_used);
         m_heap_buffer.swap(new_heap_buffer);
     }
@@ -319,7 +308,7 @@ void VDebug::encode(string_literal_t arg)
         arg, TupleIndex<string_literal_t, SupportedTypes>::value);
 }
 
-VDebug& VDebug::operator<<(std::string const& arg)
+VDebug& VDebug::operator<<(rlottie_std::string const& arg)
 {
     encode_c_string(arg.c_str(), arg.length());
     return *this;
@@ -379,16 +368,16 @@ struct BufferBase {
 };
 
 struct SpinLock {
-    SpinLock(std::atomic_flag& flag) : m_flag(flag)
+    SpinLock(rlottie_std::atomic_flag& flag) : m_flag(flag)
     {
-        while (m_flag.test_and_set(std::memory_order_acquire))
+        while (m_flag.test_and_set(rlottie_std::memory_order_acquire))
             ;
     }
 
-    ~SpinLock() { m_flag.clear(std::memory_order_release); }
+    ~SpinLock() { m_flag.clear(rlottie_std::memory_order_release); }
 
 private:
-    std::atomic_flag& m_flag;
+    rlottie_std::atomic_flag& m_flag;
 };
 
 /* Multi Producer Single Consumer Ring Buffer */
@@ -400,16 +389,16 @@ public:
         {
         }
 
-        std::atomic_flag flag;
+        rlottie_std::atomic_flag flag;
         char             written;
-        char             padding[256 - sizeof(std::atomic_flag) - sizeof(char) -
+        char             padding[256 - sizeof(rlottie_std::atomic_flag) - sizeof(char) -
                      sizeof(VDebug)];
         VDebug           logline;
     };
 
     RingBuffer(size_t const size)
         : m_size(size),
-          m_ring(static_cast<Item*>(std::malloc(size * sizeof(Item)))),
+          m_ring(static_cast<Item*>(rlottie_std::malloc(size * sizeof(Item)))),
           m_write_index(0),
           m_read_index(0)
     {
@@ -424,16 +413,16 @@ public:
         for (size_t i = 0; i < m_size; ++i) {
             m_ring[i].~Item();
         }
-        std::free(m_ring);
+        rlottie_std::free(m_ring);
     }
 
     void push(VDebug&& logline) override
     {
         unsigned int write_index =
-            m_write_index.fetch_add(1, std::memory_order_relaxed) % m_size;
+            m_write_index.fetch_add(1, rlottie_std::memory_order_relaxed) % m_size;
         Item&    item = m_ring[write_index];
         SpinLock spinlock(item.flag);
-        item.logline = std::move(logline);
+        item.logline = rlottie_std::move(logline);
         item.written = 1;
     }
 
@@ -442,7 +431,7 @@ public:
         Item&    item = m_ring[m_read_index % m_size];
         SpinLock spinlock(item.flag);
         if (item.written == 1) {
-            logline = std::move(item.logline);
+            logline = rlottie_std::move(item.logline);
             item.written = 0;
             ++m_read_index;
             return true;
@@ -456,7 +445,7 @@ public:
 private:
     size_t const              m_size;
     Item*                     m_ring;
-    std::atomic<unsigned int> m_write_index;
+    rlottie_std::atomic<unsigned int> m_write_index;
 
 public:
     char pad[64];
@@ -468,7 +457,7 @@ private:
 class Buffer {
 public:
     struct Item {
-        Item(VDebug&& logline) : logline(std::move(logline)) {}
+        Item(VDebug&& logline) : logline(rlottie_std::move(logline)) {}
         char   padding[256 - sizeof(VDebug)];
         VDebug logline;
     };
@@ -476,10 +465,10 @@ public:
     static constexpr const size_t size =
         32768;  // 8MB. Helps reduce memory fragmentation
 
-    Buffer() : m_buffer(static_cast<Item*>(std::malloc(size * sizeof(Item))))
+    Buffer() : m_buffer(static_cast<Item*>(rlottie_std::malloc(size * sizeof(Item))))
     {
         for (size_t i = 0; i <= size; ++i) {
-            m_write_state[i].store(0, std::memory_order_relaxed);
+            m_write_state[i].store(0, rlottie_std::memory_order_relaxed);
         }
         static_assert(sizeof(Item) == 256, "Unexpected size != 256");
     }
@@ -490,24 +479,24 @@ public:
         for (size_t i = 0; i < write_count; ++i) {
             m_buffer[i].~Item();
         }
-        std::free(m_buffer);
+        rlottie_std::free(m_buffer);
     }
 
     // Returns true if we need to switch to next buffer
     bool push(VDebug&& logline, unsigned int const write_index)
     {
-        new (&m_buffer[write_index]) Item(std::move(logline));
-        m_write_state[write_index].store(1, std::memory_order_release);
-        return m_write_state[size].fetch_add(1, std::memory_order_acquire) +
+        new (&m_buffer[write_index]) Item(rlottie_std::move(logline));
+        m_write_state[write_index].store(1, rlottie_std::memory_order_release);
+        return m_write_state[size].fetch_add(1, rlottie_std::memory_order_acquire) +
                    1 ==
                size;
     }
 
     bool try_pop(VDebug& logline, unsigned int const read_index)
     {
-        if (m_write_state[read_index].load(std::memory_order_acquire)) {
+        if (m_write_state[read_index].load(rlottie_std::memory_order_acquire)) {
             Item& item = m_buffer[read_index];
-            logline = std::move(item.logline);
+            logline = rlottie_std::move(item.logline);
             return true;
         }
         return false;
@@ -518,7 +507,7 @@ public:
 
 private:
     Item*                     m_buffer;
-    std::atomic<unsigned int> m_write_state[size + 1];
+    rlottie_std::atomic<unsigned int> m_write_state[size + 1];
 };
 
 class QueueBuffer : public BufferBase {
@@ -538,17 +527,17 @@ public:
     void push(VDebug&& logline) override
     {
         unsigned int write_index =
-            m_write_index.fetch_add(1, std::memory_order_relaxed);
+            m_write_index.fetch_add(1, rlottie_std::memory_order_relaxed);
         if (write_index < Buffer::size) {
-            if (m_current_write_buffer.load(std::memory_order_acquire)
-                    ->push(std::move(logline), write_index)) {
+            if (m_current_write_buffer.load(rlottie_std::memory_order_acquire)
+                    ->push(rlottie_std::move(logline), write_index)) {
                 setup_next_write_buffer();
             }
         } else {
-            while (m_write_index.load(std::memory_order_acquire) >=
+            while (m_write_index.load(rlottie_std::memory_order_acquire) >=
                    Buffer::size)
                 ;
-            push(std::move(logline));
+            push(rlottie_std::move(logline));
         }
     }
 
@@ -578,12 +567,12 @@ public:
 private:
     void setup_next_write_buffer()
     {
-        std::unique_ptr<Buffer> next_write_buffer(new Buffer());
+        rlottie_std::unique_ptr<Buffer> next_write_buffer(new Buffer());
         m_current_write_buffer.store(next_write_buffer.get(),
-                                     std::memory_order_release);
+                                     rlottie_std::memory_order_release);
         SpinLock spinlock(m_flag);
-        m_buffers.push(std::move(next_write_buffer));
-        m_write_index.store(0, std::memory_order_relaxed);
+        m_buffers.push(rlottie_std::move(next_write_buffer));
+        m_write_index.store(0, rlottie_std::memory_order_relaxed);
     }
 
     Buffer* get_next_read_buffer()
@@ -593,18 +582,18 @@ private:
     }
 
 private:
-    std::queue<std::unique_ptr<Buffer> > m_buffers;
-    std::atomic<Buffer*>                 m_current_write_buffer;
+    rlottie_std::queue<rlottie_std::unique_ptr<Buffer> > m_buffers;
+    rlottie_std::atomic<Buffer*>                 m_current_write_buffer;
     Buffer*                              m_current_read_buffer;
-    std::atomic<unsigned int>            m_write_index;
-    std::atomic_flag                     m_flag;
+    rlottie_std::atomic<unsigned int>            m_write_index;
+    rlottie_std::atomic_flag                     m_flag;
     unsigned int                         m_read_index;
 };
 
 class FileWriter {
 public:
-    FileWriter(std::string const& log_directory,
-               std::string const& log_file_name, uint32_t log_file_roll_size_mb)
+    FileWriter(rlottie_std::string const& log_directory,
+               rlottie_std::string const& log_file_name, uint32_t log_file_roll_size_mb)
         : m_log_file_roll_size_bytes(log_file_roll_size_mb * 1024 * 1024),
           m_name(log_directory + log_file_name)
     {
@@ -630,46 +619,46 @@ private:
         }
 
         m_bytes_written = 0;
-        m_os = std::make_unique<std::ofstream>();
+        m_os = rlottie_std::make_unique<rlottie_std::ofstream>();
         // TODO Optimize this part. Does it even matter ?
-        std::string log_file_name = m_name;
+        rlottie_std::string log_file_name = m_name;
         log_file_name.append(".");
-        log_file_name.append(std::to_string(++m_file_number));
+        log_file_name.append(rlottie_std::to_string(++m_file_number));
         log_file_name.append(".txt");
-        m_os->open(log_file_name, std::ofstream::out | std::ofstream::trunc);
+        m_os->open(log_file_name, rlottie_std::ofstream::out | rlottie_std::ofstream::trunc);
     }
 
 private:
     uint32_t                       m_file_number = 0;
-    std::streamoff                 m_bytes_written = 0;
+    rlottie_std::streamoff                 m_bytes_written = 0;
     uint32_t const                 m_log_file_roll_size_bytes;
-    std::string const              m_name;
-    std::unique_ptr<std::ofstream> m_os;
+    rlottie_std::string const              m_name;
+    rlottie_std::unique_ptr<rlottie_std::ofstream> m_os;
 };
 
 class NanoLogger {
 public:
-    NanoLogger(NonGuaranteedLogger ngl, std::string const& log_directory,
-               std::string const& log_file_name, uint32_t log_file_roll_size_mb)
+    NanoLogger(NonGuaranteedLogger ngl, rlottie_std::string const& log_directory,
+               rlottie_std::string const& log_file_name, uint32_t log_file_roll_size_mb)
         : m_state(State::INIT),
           m_buffer_base(
-              new RingBuffer(std::max(1u, ngl.ring_buffer_size_mb) * 1024 * 4)),
+              new RingBuffer(rlottie_std::max(1u, ngl.ring_buffer_size_mb) * 1024 * 4)),
           m_file_writer(log_directory, log_file_name,
-                        std::max(1u, log_file_roll_size_mb)),
+                        rlottie_std::max(1u, log_file_roll_size_mb)),
           m_thread(&NanoLogger::pop, this)
     {
-        m_state.store(State::READY, std::memory_order_release);
+        m_state.store(State::READY, rlottie_std::memory_order_release);
     }
 
-    NanoLogger(GuaranteedLogger /*gl*/, std::string const& log_directory,
-               std::string const& log_file_name, uint32_t log_file_roll_size_mb)
+    NanoLogger(GuaranteedLogger /*gl*/, rlottie_std::string const& log_directory,
+               rlottie_std::string const& log_file_name, uint32_t log_file_roll_size_mb)
         : m_state(State::INIT),
           m_buffer_base(new QueueBuffer()),
           m_file_writer(log_directory, log_file_name,
-                        std::max(1u, log_file_roll_size_mb)),
+                        rlottie_std::max(1u, log_file_roll_size_mb)),
           m_thread(&NanoLogger::pop, this)
     {
-        m_state.store(State::READY, std::memory_order_release);
+        m_state.store(State::READY, rlottie_std::memory_order_release);
     }
 
     ~NanoLogger()
@@ -678,14 +667,14 @@ public:
         m_thread.join();
     }
 
-    void add(VDebug&& logline) { m_buffer_base->push(std::move(logline)); }
+    void add(VDebug&& logline) { m_buffer_base->push(rlottie_std::move(logline)); }
 
     void pop()
     {
         // Wait for constructor to complete and pull all stores done there to
         // this thread / core.
-        while (m_state.load(std::memory_order_acquire) == State::INIT)
-            std::this_thread::sleep_for(std::chrono::microseconds(50));
+        while (m_state.load(rlottie_std::memory_order_acquire) == State::INIT)
+            rlottie_std::this_thread::sleep_for(rlottie_std::chrono::microseconds(50));
 
         VDebug logline(LogLevel::INFO, nullptr, nullptr, 0);
 
@@ -693,7 +682,7 @@ public:
             if (m_buffer_base->try_pop(logline))
                 m_file_writer.write(logline);
             else
-                std::this_thread::sleep_for(std::chrono::microseconds(50));
+                rlottie_std::this_thread::sleep_for(rlottie_std::chrono::microseconds(50));
         }
 
         // Pop and log all remaining entries
@@ -705,50 +694,50 @@ public:
 private:
     enum class State { INIT, READY, SHUTDOWN };
 
-    std::atomic<State>          m_state;
-    std::unique_ptr<BufferBase> m_buffer_base;
+    rlottie_std::atomic<State>          m_state;
+    rlottie_std::unique_ptr<BufferBase> m_buffer_base;
     FileWriter                  m_file_writer;
-    std::thread                 m_thread;
+    rlottie_std::thread                 m_thread;
 };
 
-std::unique_ptr<NanoLogger> nanologger;
-std::atomic<NanoLogger*>    atomic_nanologger;
+rlottie_std::unique_ptr<NanoLogger> nanologger;
+rlottie_std::atomic<NanoLogger*>    atomic_nanologger;
 
 bool VDebugServer::operator==(VDebug& logline)
 {
-    atomic_nanologger.load(std::memory_order_acquire)->add(std::move(logline));
+    atomic_nanologger.load(rlottie_std::memory_order_acquire)->add(rlottie_std::move(logline));
     return true;
 }
 
-void initialize(NonGuaranteedLogger ngl, std::string const& log_directory,
-                std::string const& log_file_name,
+void initialize(NonGuaranteedLogger ngl, rlottie_std::string const& log_directory,
+                rlottie_std::string const& log_file_name,
                 uint32_t           log_file_roll_size_mb)
 {
-    nanologger = std::make_unique<NanoLogger>(ngl, log_directory, log_file_name,
+    nanologger = rlottie_std::make_unique<NanoLogger>(ngl, log_directory, log_file_name,
                                               log_file_roll_size_mb);
-    atomic_nanologger.store(nanologger.get(), std::memory_order_seq_cst);
+    atomic_nanologger.store(nanologger.get(), rlottie_std::memory_order_seq_cst);
 }
 
-void initialize(GuaranteedLogger gl, std::string const& log_directory,
-                std::string const& log_file_name,
+void initialize(GuaranteedLogger gl, rlottie_std::string const& log_directory,
+                rlottie_std::string const& log_file_name,
                 uint32_t           log_file_roll_size_mb)
 {
-    nanologger = std::make_unique<NanoLogger>(gl, log_directory, log_file_name,
+    nanologger = rlottie_std::make_unique<NanoLogger>(gl, log_directory, log_file_name,
                                               log_file_roll_size_mb);
-    atomic_nanologger.store(nanologger.get(), std::memory_order_seq_cst);
+    atomic_nanologger.store(nanologger.get(), rlottie_std::memory_order_seq_cst);
 }
 
-std::atomic<unsigned int> loglevel = {0};
+rlottie_std::atomic<unsigned int> loglevel = {0};
 
 void set_log_level(LogLevel level)
 {
-    loglevel.store(static_cast<unsigned int>(level), std::memory_order_release);
+    loglevel.store(static_cast<unsigned int>(level), rlottie_std::memory_order_release);
 }
 
 bool is_logged(LogLevel level)
 {
     return static_cast<unsigned int>(level) >=
-           loglevel.load(std::memory_order_relaxed);
+           loglevel.load(rlottie_std::memory_order_relaxed);
 }
 
 #endif  // LOTTIE_LOGGING_SUPPORT

@@ -6,8 +6,10 @@
  */
 
 #include "varenaalloc.h"
-#include <algorithm>
-#include <new>
+
+#if LOTTIE_DEFAULT_ALLOCATOR
+
+#else //LOTTIE_DEFAULT_ALLOCATOR
 
 static char* end_chain(char*) { return nullptr; }
 
@@ -96,11 +98,11 @@ void VArenaAlloc::installUint32Footer(FooterAction* action, uint32_t value, uint
 
 void VArenaAlloc::ensureSpace(uint32_t size, uint32_t alignment) {
     constexpr uint32_t headerSize = sizeof(Footer) + sizeof(ptrdiff_t);
-    // The chrome c++ library we use does not define std::max_align_t.
+    // The chrome c++ library we use does not define rlottie_std::max_align_t.
     // This must be conservative to add the right amount of extra memory to handle the alignment
     // padding.
     constexpr uint32_t alignof_max_align_t = 8;
-    constexpr uint32_t maxSize = std::numeric_limits<uint32_t>::max();
+    constexpr uint32_t maxSize = rlottie_std::numeric_limits<uint32_t>::max();
     constexpr uint32_t overhead = headerSize + sizeof(Footer);
     AssertRelease(size <= maxSize - overhead);
     uint32_t objSizeAndOverhead = size + overhead;
@@ -114,11 +116,11 @@ void VArenaAlloc::ensureSpace(uint32_t size, uint32_t alignment) {
     if (fFirstHeapAllocationSize <= maxSize / fFib0) {
         minAllocationSize = fFirstHeapAllocationSize * fFib0;
         fFib0 += fFib1;
-        std::swap(fFib0, fFib1);
+        rlottie_std::swap(fFib0, fFib1);
     } else {
         minAllocationSize = maxSize;
     }
-    uint32_t allocationSize = std::max(objSizeAndOverhead, minAllocationSize);
+    uint32_t allocationSize = rlottie_std::max(objSizeAndOverhead, minAllocationSize);
 
     // Round up to a nice size. If > 32K align to 4K boundary else up to max_align_t. The > 32K
     // heuristic is from the JEMalloc behavior.
@@ -148,7 +150,7 @@ restart:
     }
     char* objStart = (char*)((uintptr_t)(fCursor + skipOverhead + mask) & ~mask);
     uint32_t totalSize = sizeIncludingFooter + skipOverhead;
-    //std::cout<<"non POD object size = "<<totalSize<<"\n";
+    //rlottie_std::cout<<"non POD object size = "<<totalSize<<"\n";
     if ((ptrdiff_t)totalSize > fEnd - objStart) {
         this->ensureSpace(totalSize, alignment);
         goto restart;
@@ -164,3 +166,5 @@ restart:
 
     return objStart;
 }
+
+#endif 

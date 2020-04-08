@@ -99,7 +99,7 @@ inline float VMatrix::scale() const
     p2 = map(p2);
     VPointF final = p2 - p1;
 
-    return std::sqrt(final.x() * final.x() + final.y() * final.y()) / 2.0f;
+    return rlottie_std::sqrt(final.x() * final.x() + final.y() * final.y()) / 2.0f;
 }
 
 inline VPointF VMatrix::map(float x, float y) const

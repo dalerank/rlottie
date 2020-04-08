@@ -20,11 +20,10 @@
 #include "lottieparser.h"
 
 #include <cstring>
-#include <fstream>
+#include <stdio.h>
 
 #ifdef LOTTIE_CACHE_SUPPORT
 
-#include <unordered_map>
 #include <mutex>
 
 class LottieModelCache {
@@ -34,9 +33,9 @@ public:
         static LottieModelCache CACHE;
         return CACHE;
     }
-    std::shared_ptr<LOTModel> find(const std::string &key)
+    rlottie_std::shared_ptr<LOTModel> find(const rlottie_std::string &key)
     {
-        std::lock_guard<std::mutex> guard(mMutex);
+        rlottie_std::lock_guard<rlottie_std::mutex> guard(mMutex);
 
         if (!mcacheSize) return nullptr;
 
@@ -45,9 +44,9 @@ public:
         return (search != mHash.end()) ? search->second : nullptr;
 
     }
-    void add(const std::string &key, std::shared_ptr<LOTModel> value)
+    void add(const rlottie_std::string &key, rlottie_std::shared_ptr<LOTModel> value)
     {
-        std::lock_guard<std::mutex> guard(mMutex);
+        rlottie_std::lock_guard<rlottie_std::mutex> guard(mMutex);
 
         if (!mcacheSize) return;
 
@@ -55,12 +54,12 @@ public:
         // not the best of LRU logic
         if (mcacheSize == mHash.size()) mHash.erase(mHash.cbegin());
 
-        mHash[key] = std::move(value);
+        mHash[key] = rlottie_std::move(value);
     }
 
     void configureCacheSize(size_t cacheSize)
     {
-        std::lock_guard<std::mutex> guard(mMutex);
+        rlottie_std::lock_guard<rlottie_std::mutex> guard(mMutex);
         mcacheSize = cacheSize;
 
         if (!mcacheSize) mHash.clear();
@@ -69,8 +68,8 @@ public:
 private:
     LottieModelCache() = default;
 
-    std::unordered_map<std::string, std::shared_ptr<LOTModel>>  mHash;
-    std::mutex                                                  mMutex;
+    rlottie_std::unordered_map<rlottie_std::string, rlottie_std::shared_ptr<LOTModel>>  mHash;
+    rlottie_std::mutex                                                  mMutex;
     size_t                                                      mcacheSize{10};
 };
 
@@ -83,8 +82,8 @@ public:
         static LottieModelCache CACHE;
         return CACHE;
     }
-    std::shared_ptr<LOTModel> find(const std::string &) { return nullptr; }
-    void add(const std::string &, std::shared_ptr<LOTModel>) {}
+    rlottie_std::shared_ptr<LOTModel> find(const rlottie_std::string &) { return nullptr; }
+    void add(const rlottie_std::string &, rlottie_std::shared_ptr<LOTModel>) {}
     void configureCacheSize(size_t) {}
 };
 
@@ -95,53 +94,69 @@ void LottieLoader::configureModelCacheSize(size_t cacheSize)
     LottieModelCache::instance().configureCacheSize(cacheSize);
 }
 
-static std::string dirname(const std::string &path)
+static rlottie_std::string dirname(const rlottie_std::string &path)
 {
     const char *ptr = strrchr(path.c_str(), '/');
 #ifdef _WIN32
     if (ptr) ptr = strrchr(ptr + 1, '\\');
 #endif
     int         len = int(ptr + 1 - path.c_str());  // +1 to include '/'
-    return std::string(path, 0, len);
+    return rlottie_std::string(path, 0, len);
 }
 
-bool LottieLoader::load(const std::string &path, bool cachePolicy)
+bool LottieLoader::load(const rlottie_std::string &path, bool cachePolicy)
 {
     if (cachePolicy) {
         mModel = LottieModelCache::instance().find(path);
         if (mModel) return true;
     }
 
-    std::ifstream f;
+#ifdef LOTTIE_NOSTDSTREAM_SUPPORT
+    FILE* f = fopen(path.c_str(), "rb");
+
+    if (!f) {
+        return false;
+    }
+    fseek(f, 0, SEEK_END);
+    size_t size = ftell(f);
+
+    rlottie_std::vector<char> where(size);
+
+    rewind(f);
+    fread(where.data(), sizeof(char), size, f);
+    rlottie_std::string content(where.data(), where.size());
+#else    
+    rlottie_std::ifstream f;
     f.open(path);
 
     if (!f.is_open()) {
         vCritical << "failed to open file = " << path.c_str();
         return false;
-    } else {
-        std::string content;
-
-        std::getline(f, content, '\0') ;
-        f.close();
-
-        if (content.empty()) return false;
-
-        const char *str = content.c_str();
-        LottieParser parser(const_cast<char *>(str),
-                            dirname(path).c_str());
-        mModel = parser.model();
-
-        if (!mModel) return false;
-
-        if (cachePolicy)
-            LottieModelCache::instance().add(path, mModel);
     }
+
+    rlottie_std::string content;
+
+    rlottie_std::getline(f, content, '\0') ;
+    f.close();
+#endif
+
+    if (content.empty()) return false;
+
+    const char *str = content.c_str();
+    LottieParser parser(const_cast<char *>(str),
+                        dirname(path).c_str());
+    mModel = parser.model();
+
+    if (!mModel) return false;
+
+    if (cachePolicy)
+        LottieModelCache::instance().add(path, mModel);
 
     return true;
 }
 
-bool LottieLoader::loadFromData(std::string &&jsonData, const std::string &key,
-                                const std::string &resourcePath, bool cachePolicy)
+bool LottieLoader::loadFromData(rlottie_std::string &&jsonData, const rlottie_std::string &key,
+                                const rlottie_std::string &resourcePath, bool cachePolicy)
 {
     if (cachePolicy) {
         mModel = LottieModelCache::instance().find(key);
@@ -160,7 +175,7 @@ bool LottieLoader::loadFromData(std::string &&jsonData, const std::string &key,
     return true;
 }
 
-std::shared_ptr<LOTModel> LottieLoader::model()
+rlottie_std::shared_ptr<LOTModel> LottieLoader::model()
 {
     return mModel;
 }

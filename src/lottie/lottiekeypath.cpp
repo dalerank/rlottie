@@ -1,18 +1,28 @@
 #include "lottiekeypath.h"
 
-#include <sstream>
-
-LOTKeyPath::LOTKeyPath(const std::string &keyPath)
+LOTKeyPath::LOTKeyPath(const rlottie_std::string &keyPath)
 {
-    std::stringstream ss(keyPath);
-    std::string       item;
+#ifdef LOTTIE_NOSTDSTREAM_SUPPORT    
+    int start = 0, i = 0;
+    for (; i < keyPath.size(); i++)
+      if (keyPath[i] == '.')
+      {
+        mKeys.push_back(keyPath.substr(start, i-start));
+        i++;
+        start = i;
+      }
+    mKeys.push_back(keyPath.substr(start, i-start));
+#else    
+    rlottie_std::stringstream ss(keyPath);
+    rlottie_std::string       item;
 
     while (getline(ss, item, '.')) {
         mKeys.push_back(item);
     }
+#endif    
 }
 
-bool LOTKeyPath::matches(const std::string &key, uint depth)
+bool LOTKeyPath::matches(const rlottie_std::string &key, uint depth)
 {
     if (skip(key)) {
         // This is an object we programatically create.
@@ -28,7 +38,7 @@ bool LOTKeyPath::matches(const std::string &key, uint depth)
     return false;
 }
 
-uint LOTKeyPath::nextDepth(const std::string key, uint depth)
+uint LOTKeyPath::nextDepth(const rlottie_std::string key, uint depth)
 {
     if (skip(key)) {
         // If it's a container then we added programatically and it isn't a part
@@ -51,7 +61,7 @@ uint LOTKeyPath::nextDepth(const std::string key, uint depth)
     return depth;
 }
 
-bool LOTKeyPath::fullyResolvesTo(const std::string key, uint depth)
+bool LOTKeyPath::fullyResolvesTo(const rlottie_std::string key, uint depth)
 {
     if (depth > mKeys.size()) {
         return false;

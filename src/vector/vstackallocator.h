@@ -22,7 +22,7 @@
 #include <cstddef>
 #include <cassert>
 
-template <std::size_t N, std::size_t alignment = alignof(std::max_align_t)>
+template <rlottie_std::size_t N, rlottie_std::size_t alignment = alignof(rlottie_std::max_align_t)>
 class arena
 {
     alignas(alignment) char buf_[N];
@@ -34,17 +34,17 @@ public:
     arena(const arena&) = delete;
     arena& operator=(const arena&) = delete;
 
-    template <std::size_t ReqAlign> char* allocate(std::size_t n);
-    void deallocate(char* p, std::size_t n) noexcept;
+    template <rlottie_std::size_t ReqAlign> char* allocate(rlottie_std::size_t n);
+    void deallocate(char* p, rlottie_std::size_t n) noexcept;
 
-    static constexpr std::size_t size() noexcept {return N;}
-    std::size_t used() const noexcept {return static_cast<std::size_t>(ptr_ - buf_);}
+    static constexpr rlottie_std::size_t size() noexcept {return N;}
+    rlottie_std::size_t used() const noexcept {return static_cast<rlottie_std::size_t>(ptr_ - buf_);}
     void reset() noexcept {ptr_ = buf_;}
 
 private:
     static
-    std::size_t
-    align_up(std::size_t n) noexcept
+    rlottie_std::size_t
+    align_up(rlottie_std::size_t n) noexcept
         {return (n + (alignment-1)) & ~(alignment-1);}
 
     bool
@@ -52,10 +52,10 @@ private:
         {return buf_ <= p && p <= buf_ + N;}
 };
 
-template <std::size_t N, std::size_t alignment>
-template <std::size_t ReqAlign>
+template <rlottie_std::size_t N, rlottie_std::size_t alignment>
+template <rlottie_std::size_t ReqAlign>
 char*
-arena<N, alignment>::allocate(std::size_t n)
+arena<N, alignment>::allocate(rlottie_std::size_t n)
 {
     static_assert(ReqAlign <= alignment, "alignment is too small for this arena");
     assert(pointer_in_buffer(ptr_) && "stack_alloc has outlived arena");
@@ -67,15 +67,15 @@ arena<N, alignment>::allocate(std::size_t n)
         return r;
     }
 
-    static_assert(alignment <= alignof(std::max_align_t), "you've chosen an "
-                  "alignment that is larger than alignof(std::max_align_t), and "
+    static_assert(alignment <= alignof(rlottie_std::max_align_t), "you've chosen an "
+                  "alignment that is larger than alignof(rlottie_std::max_align_t), and "
                   "cannot be guaranteed by normal operator new");
     return static_cast<char*>(::operator new(n));
 }
 
-template <std::size_t N, std::size_t alignment>
+template <rlottie_std::size_t N, rlottie_std::size_t alignment>
 void
-arena<N, alignment>::deallocate(char* p, std::size_t n) noexcept
+arena<N, alignment>::deallocate(char* p, rlottie_std::size_t n) noexcept
 {
     assert(pointer_in_buffer(ptr_) && "stack_alloc has outlived arena");
     if (pointer_in_buffer(p))
@@ -88,7 +88,7 @@ arena<N, alignment>::deallocate(char* p, std::size_t n) noexcept
         ::operator delete(p);
 }
 
-template <class T, std::size_t N, std::size_t Align = alignof(std::max_align_t)>
+template <class T, rlottie_std::size_t N, rlottie_std::size_t Align = alignof(rlottie_std::max_align_t)>
 class stack_alloc
 {
 public:
@@ -115,25 +115,25 @@ public:
 
     template <class _Up> struct rebind {using other = stack_alloc<_Up, N, alignment>;};
 
-    T* allocate(std::size_t n)
+    T* allocate(rlottie_std::size_t n)
     {
         return reinterpret_cast<T*>(a_.template allocate<alignof(T)>(n*sizeof(T)));
     }
-    void deallocate(T* p, std::size_t n) noexcept
+    void deallocate(T* p, rlottie_std::size_t n) noexcept
     {
         a_.deallocate(reinterpret_cast<char*>(p), n*sizeof(T));
     }
 
-    template <class T1, std::size_t N1, std::size_t A1,
-              class U, std::size_t M, std::size_t A2>
+    template <class T1, rlottie_std::size_t N1, rlottie_std::size_t A1,
+              class U, rlottie_std::size_t M, rlottie_std::size_t A2>
     friend
     bool
     operator==(const stack_alloc<T1, N1, A1>& x, const stack_alloc<U, M, A2>& y) noexcept;
 
-    template <class U, std::size_t M, std::size_t A> friend class stack_alloc;
+    template <class U, rlottie_std::size_t M, rlottie_std::size_t A> friend class stack_alloc;
 };
 
-template <class T, std::size_t N, std::size_t A1, class U, std::size_t M, std::size_t A2>
+template <class T, rlottie_std::size_t N, rlottie_std::size_t A1, class U, rlottie_std::size_t M, rlottie_std::size_t A2>
 inline
 bool
 operator==(const stack_alloc<T, N, A1>& x, const stack_alloc<U, M, A2>& y) noexcept
@@ -141,7 +141,7 @@ operator==(const stack_alloc<T, N, A1>& x, const stack_alloc<U, M, A2>& y) noexc
     return N == M && A1 == A2 && &x.a_ == &y.a_;
 }
 
-template <class T, std::size_t N, std::size_t A1, class U, std::size_t M, std::size_t A2>
+template <class T, rlottie_std::size_t N, rlottie_std::size_t A1, class U, rlottie_std::size_t M, rlottie_std::size_t A2>
 inline
 bool
 operator!=(const stack_alloc<T, N, A1>& x, const stack_alloc<U, M, A2>& y) noexcept

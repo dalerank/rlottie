@@ -18,10 +18,7 @@
 
 #include "vrle.h"
 #include <vrect.h>
-#include <algorithm>
-#include <array>
 #include <cstdlib>
-#include <vector>
 #include "vdebug.h"
 #include "vglobal.h"
 
@@ -47,11 +44,11 @@ static inline uchar divBy255(int x)
 }
 
 inline static void copyArrayToVector(const VRle::Span *span, size_t count,
-                                     std::vector<VRle::Span> &v)
+                                     rlottie_std::vector<VRle::Span> &v)
 {
     // make sure enough memory available
     if (v.capacity() < v.size() + count) v.reserve(v.size() + count);
-    std::copy(span, span + count, back_inserter(v));
+    rlottie_std::copy(span, span + count, back_inserter(v));
 }
 
 void VRle::VRleData::addSpan(const VRle::Span *span, size_t count)
@@ -125,7 +122,7 @@ void VRle::VRleData::updateBbox() const
 
     mBboxDirty = false;
 
-    int               l = std::numeric_limits<int>::max();
+    int               l = rlottie_std::numeric_limits<int>::max();
     const VRle::Span *span = mSpans.data();
 
     mBbox = VRect();
@@ -168,7 +165,7 @@ void VRle::VRleData::opIntersect(const VRect &r, VRle::VRleSpanCb cb,
 
     VRect                       clip = r;
     VRleHelper                  tresult, tmp_obj;
-    std::array<VRle::Span, 256> array;
+    rlottie_std::array<VRle::Span, 256> array;
 
     // setup the tresult object
     tresult.size = array.size();
@@ -213,7 +210,7 @@ void VRle::VRleData::opSubstract(const VRle::VRleData &a,
 
         // 2. calculate the intersect region
         VRleHelper                  tresult, aObj, bObj;
-        std::array<VRle::Span, 256> array;
+        rlottie_std::array<VRle::Span, 256> array;
 
         // setup the tresult object
         tresult.size = array.size();
@@ -278,7 +275,7 @@ void VRle::VRleData::opGeneric(const VRle::VRleData &a, const VRle::VRleData &b,
 
         // 3. calculate the intersect region
         VRleHelper                  tresult, aObj, bObj;
-        std::array<VRle::Span, 256> array;
+        rlottie_std::array<VRle::Span, 256> array;
 
         // setup the tresult object
         tresult.size = array.size();
@@ -320,7 +317,7 @@ void VRle::VRleData::opGeneric(const VRle::VRleData &a, const VRle::VRleData &b,
 
 static void rle_cb(size_t count, const VRle::Span *spans, void *userData)
 {
-    auto vector = static_cast<std::vector<VRle::Span> *>(userData);
+    auto vector = static_cast<rlottie_std::vector<VRle::Span> *>(userData);
     copyArrayToVector(spans, count, *vector);
 }
 
@@ -328,7 +325,7 @@ void opIntersectHelper(const VRle::VRleData &obj1, const VRle::VRleData &obj2,
                        VRle::VRleSpanCb cb, void *userData)
 {
     VRleHelper                  result, source, clip;
-    std::array<VRle::Span, 256> array;
+    rlottie_std::array<VRle::Span, 256> array;
 
     // setup the tresult object
     result.size = array.size();
@@ -411,11 +408,11 @@ static void rleIntersectWithRle(VRleHelper *tmp_clip, int clip_offset_x,
             ++spans;
             continue;
         }
-        x = std::max(sx1, cx1);
-        len = std::min(sx2, cx2) - x;
+        x = rlottie_std::max(sx1, cx1);
+        len = rlottie_std::min(sx2, cx2) - x;
         if (len) {
-            out->x = std::max(sx1, cx1);
-            out->len = (std::min(sx2, cx2) - out->x);
+            out->x = rlottie_std::max(sx1, cx1);
+            out->len = (rlottie_std::min(sx2, cx2) - out->x);
             out->y = spans->y;
             out->coverage = divBy255(spans->coverage * clipSpans->coverage);
             ++out;
@@ -549,7 +546,7 @@ void blit(VRle::Span *spans, int count, uchar *buffer, int offsetX)
         int    l = spans->len;
         uchar *ptr = buffer + x;
         while (l--) {
-            *ptr = std::max(spans->coverage, *ptr);
+            *ptr = rlottie_std::max(spans->coverage, *ptr);
             ptr++;
         }
         spans++;
@@ -592,7 +589,7 @@ size_t bufferToRle(uchar *buffer, int size, int offsetX, int y, VRle::Span *out)
 static void rleOpGeneric(VRleHelper *a, VRleHelper *b, VRleHelper *result,
                          Operation op)
 {
-    std::array<VRle::Span, 256> temp;
+    rlottie_std::array<VRle::Span, 256> temp;
     VRle::Span *                out = result->spans;
     size_t                      available = result->alloc;
     VRle::Span *                aPtr = a->spans;
@@ -618,16 +615,16 @@ static void rleOpGeneric(VRleHelper *a, VRleHelper *b, VRleHelper *result,
 
             int aLength = (aPtr - 1)->x + (aPtr - 1)->len;
             int bLength = (bPtr - 1)->x + (bPtr - 1)->len;
-            int offset = std::min(aStart->x, bStart->x);
+            int offset = rlottie_std::min(aStart->x, bStart->x);
 
-            std::array<uchar, 1024> array = {{0}};
+            rlottie_std::array<uchar, 1024> array = {{0}};
             blit(aStart, (aPtr - aStart), array.data(), -offset);
             if (op == Operation::Add)
                 blitSrcOver(bStart, (bPtr - bStart), array.data(), -offset);
             else if (op == Operation::Xor)
                 blitXor(bStart, (bPtr - bStart), array.data(), -offset);
             VRle::Span *tResult = temp.data();
-            size_t size = bufferToRle(array.data(), std::max(aLength, bLength),
+            size_t size = bufferToRle(array.data(), rlottie_std::max(aLength, bLength),
                                       offset, y, tResult);
             if (available >= size) {
                 while (size--) {
@@ -656,7 +653,7 @@ static void rleOpGeneric(VRleHelper *a, VRleHelper *b, VRleHelper *result,
 static void rleSubstractWithRle(VRleHelper *a, VRleHelper *b,
                                 VRleHelper *result)
 {
-    std::array<VRle::Span, 256> temp;
+    rlottie_std::array<VRle::Span, 256> temp;
     VRle::Span *                out = result->spans;
     size_t                      available = result->alloc;
     VRle::Span *                aPtr = a->spans;
@@ -681,13 +678,13 @@ static void rleSubstractWithRle(VRleHelper *a, VRleHelper *b,
 
             int aLength = (aPtr - 1)->x + (aPtr - 1)->len;
             int bLength = (bPtr - 1)->x + (bPtr - 1)->len;
-            int offset = std::min(aStart->x, bStart->x);
+            int offset = rlottie_std::min(aStart->x, bStart->x);
 
-            std::array<uchar, 1024> array = {{0}};
+            rlottie_std::array<uchar, 1024> array = {{0}};
             blit(aStart, (aPtr - aStart), array.data(), -offset);
             blitDestinationOut(bStart, (bPtr - bStart), array.data(), -offset);
             VRle::Span *tResult = temp.data();
-            size_t size = bufferToRle(array.data(), std::max(aLength, bLength),
+            size_t size = bufferToRle(array.data(), rlottie_std::max(aLength, bLength),
                                       offset, y, tResult);
             if (available >= size) {
                 while (size--) {

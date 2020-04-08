@@ -20,27 +20,25 @@
 #define LOTTIEKEYPATH_H
 
 #include "vglobal.h"
-#include <string>
-#include <vector>
 
 class LOTKeyPath{
 public:
-    LOTKeyPath(const std::string &keyPath);
-    bool matches(const std::string &key, uint depth);
-    uint nextDepth(const std::string key, uint depth);
-    bool fullyResolvesTo(const std::string key, uint depth);
+    LOTKeyPath(const rlottie_std::string &keyPath);
+    bool matches(const rlottie_std::string &key, uint depth);
+    uint nextDepth(const rlottie_std::string key, uint depth);
+    bool fullyResolvesTo(const rlottie_std::string key, uint depth);
 
-    bool propagate(const std::string key, uint depth) {
+    bool propagate(const rlottie_std::string key, uint depth) {
         return skip(key) ? true : (depth < size()) || (mKeys[depth] == "**");
     }
-    bool skip(const std::string &key) const { return key == "__";}
+    bool skip(const rlottie_std::string &key) const { return key == "__";}
 private:
     bool isGlobstar(uint depth) const {return mKeys[depth] == "**";}
     bool isGlob(uint depth) const {return mKeys[depth] == "*";}
     bool endsWithGlobstar() const { return mKeys.back() == "**"; }
     size_t size() const {return mKeys.size() - 1;}
 private:
-    std::vector<std::string> mKeys;
+    rlottie_std::vector<rlottie_std::string> mKeys;
 };
 
 #endif //LOTTIEKEYPATH_H

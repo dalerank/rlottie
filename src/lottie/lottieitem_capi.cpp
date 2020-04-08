@@ -84,7 +84,7 @@ void LOTShapeLayerItem::buildLayerNode()
 void LOTLayerItem::buildLayerNode()
 {
     if (!mCApiData) {
-        mCApiData = std::make_unique<LOTCApiData>();
+        mCApiData = rlottie_std::make_unique<LOTCApiData>();
         clayer().keypath = name();
     }
     if (complexContent()) clayer().mAlpha = uchar(combinedAlpha() * 255.f);
@@ -225,7 +225,7 @@ static void updateGStops(LOTNode *n, const VGradient *grad)
 void LOTDrawable::sync()
 {
     if (!mCNode) {
-        mCNode = std::make_unique<LOTNode>();
+        mCNode = rlottie_std::make_unique<LOTNode>();
         mCNode->mGradient.stopPtr = nullptr;
         mCNode->mGradient.stopCount = 0;
     }
@@ -235,8 +235,8 @@ void LOTDrawable::sync()
 
     if (mFlag & DirtyState::Path) {
         applyDashOp();
-        const std::vector<VPath::Element> &elm = mPath.elements();
-        const std::vector<VPointF> &       pts = mPath.points();
+        const rlottie_std::vector<VPath::Element> &elm = mPath.elements();
+        const rlottie_std::vector<VPointF> &       pts = mPath.points();
         const float *ptPtr = reinterpret_cast<const float *>(pts.data());
         const char * elmPtr = reinterpret_cast<const char *>(elm.data());
         mCNode->mPath.elmPtr = elmPtr;

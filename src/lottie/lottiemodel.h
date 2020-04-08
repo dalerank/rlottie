@@ -19,20 +19,16 @@
 #ifndef LOTModel_H
 #define LOTModel_H
 
-#include<vector>
-#include<memory>
-#include<unordered_map>
-#include<algorithm>
 #include <cmath>
 #include <cstring>
-#include"vpoint.h"
-#include"vrect.h"
-#include"vinterpolator.h"
-#include"vmatrix.h"
-#include"vbezier.h"
-#include"vbrush.h"
-#include"vpath.h"
-#include"varenaalloc.h"
+#include "vpoint.h"
+#include "vrect.h"
+#include "vinterpolator.h"
+#include "vmatrix.h"
+#include "vbezier.h"
+#include "vbrush.h"
+#include "vpath.h"
+#include "varenaalloc.h"
 
 V_USE_NAMESPACE
 
@@ -124,7 +120,7 @@ public:
     static void lerp(const LottieShapeData& start, const LottieShapeData& end, float t, VPath& result)
     {
         result.reset();
-        auto size = std::min(start.mPoints.size(), end.mPoints.size());
+        auto size = rlottie_std::min(start.mPoints.size(), end.mPoints.size());
         /* reserve exact memory requirement at once
          * ptSize = size + 1(size + close)
          * elmSize = size/3 cubic + 1 move + 1 close
@@ -158,7 +154,7 @@ public:
           path.close();
     }
 public:
-    std::vector<VPointF> mPoints;
+    rlottie_std::vector<VPointF> mPoints;
     bool                 mClosed = false;   /* "c" */
 };
 
@@ -274,7 +270,7 @@ public:
     }
 
 public:
-    std::vector<LOTKeyFrame<T>>    mKeyFrames;
+    rlottie_std::vector<LOTKeyFrame<T>>    mKeyFrames;
 };
 
 template<typename T>
@@ -282,7 +278,7 @@ class LOTAnimatable
 {
 public:
     LOTAnimatable() { construct(impl.mValue, {}); }
-    explicit LOTAnimatable(T value) { construct(impl.mValue, std::move(value)); }
+    explicit LOTAnimatable(T value) { construct(impl.mValue, rlottie_std::move(value)); }
 
     const LOTAnimInfo<T>& animation() const {return *(impl.mAnimInfo.get());}
     const T& value() const {return impl.mValue;}
@@ -291,7 +287,7 @@ public:
     {
         if (mStatic) {
             destroy();
-            construct(impl.mAnimInfo, std::make_unique<LOTAnimInfo<T>>());
+            construct(impl.mAnimInfo, rlottie_std::make_unique<LOTAnimInfo<T>>());
             mStatic = false;
         }
         return *(impl.mAnimInfo.get());
@@ -305,10 +301,10 @@ public:
 
     LOTAnimatable(LOTAnimatable &&other) noexcept {
         if (!other.mStatic) {
-            construct(impl.mAnimInfo, std::move(other.impl.mAnimInfo));
+            construct(impl.mAnimInfo, rlottie_std::move(other.impl.mAnimInfo));
             mStatic = false;
         } else {
-            construct(impl.mValue, std::move(other.impl.mValue));
+            construct(impl.mValue, rlottie_std::move(other.impl.mValue));
             mStatic = true;
         }
     }
@@ -336,19 +332,19 @@ private:
     template <typename Tp>
     void construct(Tp& member, Tp&& val)
     {
-        new (&member) Tp(std::move(val));
+        new (&member) Tp(rlottie_std::move(val));
     }
 
     void destroy() {
         if (mStatic) {
             impl.mValue.~T();
         } else {
-            using std::unique_ptr;
+            using rlottie_std::unique_ptr;
             impl.mAnimInfo.~unique_ptr<LOTAnimInfo<T>>();
         }
     }
     union details {
-        std::unique_ptr<LOTAnimInfo<T>>   mAnimInfo;
+        rlottie_std::unique_ptr<LOTAnimInfo<T>>   mAnimInfo;
         T                                 mValue;
         details(){};
         details(const details&) = delete;
@@ -470,7 +466,7 @@ class LOTGroupData: public LOTData
 public:
     explicit LOTGroupData(LOTData::Type  type):LOTData(type){}
 public:
-    std::vector<LOTData *>  mChildren;
+    rlottie_std::vector<LOTData *>  mChildren;
     LOTTransformData       *mTransform{nullptr};
 };
 
@@ -491,12 +487,12 @@ struct LOTAsset
     bool isStatic() const {return mStatic;}
     void setStatic(bool value) {mStatic = value;}
     VBitmap  bitmap() const {return mBitmap;}
-    void loadImageData(std::string data);
-    void loadImagePath(std::string Path);
+    void loadImageData(rlottie_std::string data);
+    void loadImagePath(rlottie_std::string Path);
     Type                                      mAssetType{Type::Precomp};
     bool                                      mStatic{true};
-    std::string                               mRefId; // ref id
-    std::vector<LOTData *>                    mLayers;
+    rlottie_std::string                               mRefId; // ref id
+    rlottie_std::vector<LOTData *>                    mLayers;
     // image asset data
     int                                       mWidth{0};
     int                                       mHeight{0};
@@ -520,14 +516,14 @@ struct TransformData
     float opacity(int frameNo) const { return mOpacity.value(frameNo)/100.0f; }
     void createExtraData()
     {
-        if (!mExtra) mExtra = std::make_unique<TransformDataExtra>();
+        if (!mExtra) mExtra = rlottie_std::make_unique<TransformDataExtra>();
     }
     LOTAnimatable<float>                   mRotation{0};  /* "r" */
     LOTAnimatable<VPointF>                 mScale{{100, 100}};     /* "s" */
     LOTAnimatable<VPointF>                 mPosition;  /* "p" */
     LOTAnimatable<VPointF>                 mAnchor;    /* "a" */
     LOTAnimatable<float>                   mOpacity{100};   /* "o" */
-    std::unique_ptr<TransformDataExtra>    mExtra;
+    rlottie_std::unique_ptr<TransformDataExtra>    mExtra;
 };
 
 class LOTTransformData : public LOTData
@@ -567,7 +563,7 @@ private:
     }
     struct static_data {
        static_data(VMatrix &&m, float opacity):
-           mOpacity(opacity), mMatrix(std::move(m)){}
+           mOpacity(opacity), mMatrix(rlottie_std::move(m)){}
        float    mOpacity;
        VMatrix  mMatrix;
     };
@@ -586,11 +582,11 @@ private:
 struct ExtraLayerData
 {
     LottieColor                mSolidColor;
-    std::string                mPreCompRefId;
+    rlottie_std::string                mPreCompRefId;
     LOTAnimatable<float>       mTimeRemap;  /* "tm" */
     LOTCompositionData        *mCompRef{nullptr};
     LOTAsset                  *mAsset{nullptr};
-    std::vector<LOTMaskData *>  mMasks;
+    rlottie_std::vector<LOTMaskData *>  mMasks;
 };
 
 class LOTLayerData : public LOTGroupData
@@ -627,7 +623,7 @@ public:
 public:
     ExtraLayerData* extra()
     {
-        if (!mExtra) mExtra = std::make_unique<ExtraLayerData>();
+        if (!mExtra) mExtra = rlottie_std::make_unique<ExtraLayerData>();
         return mExtra.get();
     }
     MatteType            mMatteType{MatteType::None};
@@ -645,18 +641,18 @@ public:
     int                  mInFrame{0};
     int                  mOutFrame{0};
     int                  mStartFrame{0};
-    std::unique_ptr<ExtraLayerData> mExtra{nullptr};
+    rlottie_std::unique_ptr<ExtraLayerData> mExtra{nullptr};
 };
 
-using Marker = std::tuple<std::string, int , int>;
+using Marker = rlottie_std::tuple<rlottie_std::string, int , int>;
 using LayerInfo = Marker;
 
 class LOTCompositionData : public LOTData
 {
 public:
     LOTCompositionData():LOTData(LOTData::Type::Composition){}
-    std::vector<LayerInfo> layerInfoList() const;
-    const std::vector<Marker> &markers() const { return  mMarkers;}
+    rlottie_std::vector<LayerInfo> layerInfoList() const;
+    const rlottie_std::vector<Marker> &markers() const { return  mMarkers;}
     double duration() const {
         return frameDuration() / frameRate(); // in second
     }
@@ -677,17 +673,17 @@ public:
     void processRepeaterObjects();
     void updateStats();
 public:
-    std::string          mVersion;
+    rlottie_std::string          mVersion;
     VSize                mSize;
     long                 mStartFrame{0};
     long                 mEndFrame{0};
     float                mFrameRate{60};
     LottieBlendMode      mBlendMode{LottieBlendMode::Normal};
     LOTLayerData        *mRootLayer{nullptr};
-    std::unordered_map<std::string,
+    rlottie_std::unordered_map<rlottie_std::string,
                        LOTAsset*>    mAssets;
 
-    std::vector<Marker>     mMarkers;
+    rlottie_std::vector<Marker>     mMarkers;
     VArenaAlloc             mArenaAlloc{2048};
     LOTModelStat            mStats;
 };
@@ -735,7 +731,7 @@ public:
 
 struct LOTDashProperty
 {
-    std::vector<LOTAnimatable<float>> mData;
+    rlottie_std::vector<LOTAnimatable<float>> mData;
     bool empty() const {return mData.empty();}
     size_t size() const {return mData.size();}
     bool isStatic() const {
@@ -743,7 +739,7 @@ struct LOTDashProperty
             if (!elm.isStatic()) return false;
         return true;
     }
-    void getDashInfo(int frameNo, std::vector<float>& result) const;
+    void getDashInfo(int frameNo, rlottie_std::vector<float>& result) const;
 };
 
 class LOTStrokeData : public LOTData
@@ -757,7 +753,7 @@ public:
     JoinStyle joinStyle() const {return mJoinStyle;}
     float miterLimit() const{return mMiterLimit;}
     bool  hasDashInfo() const {return !mDash.empty();}
-    void getDashInfo(int frameNo, std::vector<float>& result) const
+    void getDashInfo(int frameNo, rlottie_std::vector<float>& result) const
     {
         return mDash.getDashInfo(frameNo, result);
     }
@@ -779,7 +775,7 @@ public:
     friend inline LottieGradient operator-(const LottieGradient &g1, const LottieGradient &g2);
     friend inline LottieGradient operator*(float m, const LottieGradient &g);
 public:
-    std::vector<float>    mGradient;
+    rlottie_std::vector<float>    mGradient;
 };
 
 inline LottieGradient operator+(const LottieGradient &g1, const LottieGradient &g2)
@@ -833,7 +829,7 @@ class LOTGradient : public LOTData
 public:
     explicit LOTGradient(LOTData::Type  type):LOTData(type){}
     inline float opacity(int frameNo) const {return mOpacity.value(frameNo)/100.0f;}
-    void update(std::unique_ptr<VGradient> &grad, int frameNo);
+    void update(rlottie_std::unique_ptr<VGradient> &grad, int frameNo);
 
 private:
     void populate(VGradientStops &stops, int frameNo);
@@ -867,7 +863,7 @@ public:
     JoinStyle joinStyle() const {return mJoinStyle;}
     float miterLimit() const{return mMiterLimit;}
     bool  hasDashInfo() const {return !mDash.empty();}
-    void getDashInfo(int frameNo, std::vector<float>& result) const
+    void getDashInfo(int frameNo, rlottie_std::vector<float>& result) const
     {
         return mDash.getDashInfo(frameNo, result);
     }
@@ -979,9 +975,9 @@ public:
     Segment segment(int frameNo) const {
         float start = mStart.value(frameNo)/100.0f;
         float end = mEnd.value(frameNo)/100.0f;
-        float offset = std::fmod(mOffset.value(frameNo), 360.0f)/ 360.0f;
+        float offset = rlottie_std::fmod(mOffset.value(frameNo), 360.0f)/ 360.0f;
 
-        float diff = std::abs(start - end);
+        float diff = rlottie_std::abs(start - end);
         if (vCompare(diff, 0.0f)) return Segment(0, 0);
         if (vCompare(diff, 1.0f)) return Segment(0, 1);
 
@@ -1015,16 +1011,16 @@ private:
         assert(start >= 0);
         assert(end >= 0);
         Segment s;
-        s.start = std::min(start, end);
-        s.end = std::max(start, end);
+        s.start = rlottie_std::min(start, end);
+        s.end = rlottie_std::max(start, end);
         return s;
     }
     Segment loop(float start, float end) const{
         assert(start >= 0);
         assert(end >= 0);
         Segment s;
-        s.start = std::max(start, end);
-        s.end = std::min(start, end);
+        s.start = rlottie_std::max(start, end);
+        s.end = rlottie_std::min(start, end);
         return s;
     }
 public:
@@ -1090,10 +1086,10 @@ public:
    size_t startFrame() const {return mRoot->startFrame();}
    size_t endFrame() const {return mRoot->endFrame();}
    size_t frameAtPos(double pos) const {return mRoot->frameAtPos(pos);}
-   std::vector<LayerInfo> layerInfoList() const { return mRoot->layerInfoList();}
-   const std::vector<Marker> &markers() const { return mRoot->markers();}
+   rlottie_std::vector<LayerInfo> layerInfoList() const { return mRoot->layerInfoList();}
+   const rlottie_std::vector<Marker> &markers() const { return mRoot->markers();}
 public:
-    std::shared_ptr<LOTCompositionData> mRoot;
+    rlottie_std::shared_ptr<LOTCompositionData> mRoot;
 };
 
 #endif // LOTModel_H

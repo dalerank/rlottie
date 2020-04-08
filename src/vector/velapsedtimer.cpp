@@ -20,7 +20,7 @@
 
 void VElapsedTimer::start()
 {
-    clock = std::chrono::high_resolution_clock::now();
+    clock = rlottie_std::chrono::high_resolution_clock::now();
     m_valid = true;
 }
 
@@ -34,8 +34,8 @@ double VElapsedTimer::restart()
 double VElapsedTimer::elapsed() const
 {
     if (!isValid()) return 0;
-    return std::chrono::duration<double, std::milli>(
-               std::chrono::high_resolution_clock::now() - clock)
+    return rlottie_std::chrono::duration<double, rlottie_std::milli>(
+               rlottie_std::chrono::high_resolution_clock::now() - clock)
         .count();
 }
 

@@ -19,23 +19,21 @@
 #ifndef LOTTIEPROXYMODEL_H
 #define LOTTIEPROXYMODEL_H
 
-#include<bitset>
-#include<algorithm>
-#include<cassert>
+#include <cassert>
 #include "lottiemodel.h"
 #include "rlottie.h"
 
-// Naive way to implement std::variant
+// Naive way to implement rlottie_std::variant
 // refactor it when we move to c++17
 // users should make sure proper combination
 // of id and value are passed while creating the object.
 class LOTVariant
 {
 public:
-    using ValueFunc = std::function<float(const rlottie::FrameInfo &)>;
-    using ColorFunc = std::function<rlottie::Color(const rlottie::FrameInfo &)>;
-    using PointFunc = std::function<rlottie::Point(const rlottie::FrameInfo &)>;
-    using SizeFunc = std::function<rlottie::Size(const rlottie::FrameInfo &)>;
+    using ValueFunc = rlottie_std::function<float(const rlottie::FrameInfo &)>;
+    using ColorFunc = rlottie_std::function<rlottie::Color(const rlottie::FrameInfo &)>;
+    using PointFunc = rlottie_std::function<rlottie::Point(const rlottie::FrameInfo &)>;
+    using SizeFunc = rlottie_std::function<rlottie::Size(const rlottie::FrameInfo &)>;
 
     LOTVariant(rlottie::Property prop, const ValueFunc &v):mPropery(prop), mTag(Value)
     {
@@ -44,7 +42,7 @@ public:
 
     LOTVariant(rlottie::Property prop, ValueFunc &&v):mPropery(prop), mTag(Value)
     {
-        moveConstruct(impl.valueFunc, std::move(v));
+        moveConstruct(impl.valueFunc, rlottie_std::move(v));
     }
 
     LOTVariant(rlottie::Property prop, const ColorFunc &v):mPropery(prop), mTag(Color)
@@ -54,7 +52,7 @@ public:
 
     LOTVariant(rlottie::Property prop, ColorFunc &&v):mPropery(prop), mTag(Color)
     {
-        moveConstruct(impl.colorFunc, std::move(v));
+        moveConstruct(impl.colorFunc, rlottie_std::move(v));
     }
 
     LOTVariant(rlottie::Property prop, const PointFunc &v):mPropery(prop), mTag(Point)
@@ -64,7 +62,7 @@ public:
 
     LOTVariant(rlottie::Property prop, PointFunc &&v):mPropery(prop), mTag(Point)
     {
-        moveConstruct(impl.pointFunc, std::move(v));
+        moveConstruct(impl.pointFunc, rlottie_std::move(v));
     }
 
     LOTVariant(rlottie::Property prop, const SizeFunc &v):mPropery(prop), mTag(Size)
@@ -74,7 +72,7 @@ public:
 
     LOTVariant(rlottie::Property prop, SizeFunc &&v):mPropery(prop), mTag(Size)
     {
-        moveConstruct(impl.sizeFunc, std::move(v));
+        moveConstruct(impl.sizeFunc, rlottie_std::move(v));
     }
 
     rlottie::Property property() const { return mPropery; }
@@ -106,8 +104,8 @@ public:
     LOTVariant() = default;
     ~LOTVariant() noexcept {Destroy();}
     LOTVariant(const LOTVariant& other) { Copy(other);}
-    LOTVariant(LOTVariant&& other) noexcept { Move(std::move(other));}
-    LOTVariant& operator=(LOTVariant&& other) { Destroy(); Move(std::move(other)); return *this;}
+    LOTVariant(LOTVariant&& other) noexcept { Move(rlottie_std::move(other));}
+    LOTVariant& operator=(LOTVariant&& other) { Destroy(); Move(rlottie_std::move(other)); return *this;}
     LOTVariant& operator=(const LOTVariant& other) { Destroy(); Copy(other); return *this;}
 private:
     template <typename T>
@@ -119,23 +117,23 @@ private:
     template <typename T>
     void moveConstruct(T& member, T&& val)
     {
-        new (&member) T(std::move(val));
+        new (&member) T(rlottie_std::move(val));
     }
 
     void Move(LOTVariant&& other)
     {
         switch (other.mTag) {
         case Type::Value:
-            moveConstruct(impl.valueFunc, std::move(other.impl.valueFunc));
+            moveConstruct(impl.valueFunc, rlottie_std::move(other.impl.valueFunc));
             break;
         case Type::Color:
-            moveConstruct(impl.colorFunc, std::move(other.impl.colorFunc));
+            moveConstruct(impl.colorFunc, rlottie_std::move(other.impl.colorFunc));
             break;
         case Type::Point:
-            moveConstruct(impl.pointFunc, std::move(other.impl.pointFunc));
+            moveConstruct(impl.pointFunc, rlottie_std::move(other.impl.pointFunc));
             break;
         case Type::Size:
-            moveConstruct(impl.sizeFunc, std::move(other.impl.sizeFunc));
+            moveConstruct(impl.sizeFunc, rlottie_std::move(other.impl.sizeFunc));
             break;
         default:
             break;
@@ -212,7 +210,7 @@ public:
     {
         uint index = static_cast<uint>(value.property());
         if (mBitset.test(index)) {
-            std::replace_if(mFilters.begin(),
+            rlottie_std::replace_if(mFilters.begin(),
                             mFilters.end(),
                             [&value](const LOTVariant &e) {return e.property() == value.property();},
                             value);
@@ -227,7 +225,7 @@ public:
         uint index = static_cast<uint>(value.property());
         if (mBitset.test(index)) {
             mBitset.reset(index);
-            mFilters.erase(std::remove_if(mFilters.begin(),
+            mFilters.erase(rlottie_std::remove_if(mFilters.begin(),
                                           mFilters.end(),
                                           [&value](const LOTVariant &e) {return e.property() == value.property();}),
                            mFilters.end());
@@ -269,13 +267,13 @@ public:
 private:
     const LOTVariant& data(rlottie::Property prop) const
     {
-        auto result = std::find_if(mFilters.begin(),
+        auto result = rlottie_std::find_if(mFilters.begin(),
                                    mFilters.end(),
                                    [prop](const LOTVariant &e){return e.property() == prop;});
         return *result;
     }
-    std::bitset<32>            mBitset{0};
-    std::vector<LOTVariant>    mFilters;
+    rlottie_std::bitset<32>            mBitset{0};
+    rlottie_std::vector<LOTVariant>    mFilters;
 };
 
 template <typename T>
@@ -310,7 +308,7 @@ public:
     CapStyle capStyle() const {return _modelData->capStyle();}
     JoinStyle joinStyle() const {return _modelData->joinStyle();}
     bool hasDashInfo() const { return _modelData->hasDashInfo();}
-    void getDashInfo(int frameNo, std::vector<float>& result) const {
+    void getDashInfo(int frameNo, rlottie_std::vector<float>& result) const {
         return _modelData->getDashInfo(frameNo, result);
     }
 

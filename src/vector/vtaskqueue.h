@@ -19,22 +19,22 @@
 #ifndef VTASKQUEUE_H
 #define VTASKQUEUE_H
 
-#include <deque>
+#include "vglobal.h"
 
 template <typename Task>
 class TaskQueue {
-    using lock_t = std::unique_lock<std::mutex>;
-    std::deque<Task>      _q;
+    using lock_t = rlottie_std::unique_lock<rlottie_std::mutex>;
+    rlottie_std::deque<Task>      _q;
     bool                    _done{false};
-    std::mutex              _mutex;
-    std::condition_variable _ready;
+    rlottie_std::mutex              _mutex;
+    rlottie_std::condition_variable _ready;
 
 public:
     bool try_pop(Task &task)
     {
-        lock_t lock{_mutex, std::try_to_lock};
+        lock_t lock{_mutex, rlottie_std::try_to_lock};
         if (!lock || _q.empty()) return false;
-        task = std::move(_q.front());
+        task = rlottie_std::move(_q.front());
         _q.pop_front();
         return true;
     }
@@ -42,9 +42,9 @@ public:
     bool try_push(Task &&task)
     {
         {
-            lock_t lock{_mutex, std::try_to_lock};
+            lock_t lock{_mutex, rlottie_std::try_to_lock};
             if (!lock) return false;
-            _q.push_back(std::move(task));
+            _q.push_back(rlottie_std::move(task));
         }
         _ready.notify_one();
         return true;
@@ -64,7 +64,7 @@ public:
         lock_t lock{_mutex};
         while (_q.empty() && !_done) _ready.wait(lock);
         if (_q.empty()) return false;
-        task = std::move(_q.front());
+        task = rlottie_std::move(_q.front());
         _q.pop_front();
         return true;
     }
@@ -73,7 +73,7 @@ public:
     {
         {
             lock_t lock{_mutex};
-            _q.push_back(std::move(task));
+            _q.push_back(rlottie_std::move(task));
         }
         _ready.notify_one();
     }
